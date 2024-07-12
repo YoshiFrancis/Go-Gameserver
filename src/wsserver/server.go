@@ -13,6 +13,11 @@ var upgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
+const (
+	NONE     = "None"
+	USERNAME = "Username"
+)
+
 type Server struct {
 	hub          *Room
 	clients      map[*Client]bool
@@ -31,6 +36,7 @@ func NewServer() *Server {
 }
 
 func (ws *Server) Run() {
+	ws.hub.run()
 	for {
 		select {
 		case msg := <-ws.broadcast:
@@ -52,10 +58,12 @@ func (ws *Server) Serve(w http.ResponseWriter, r *http.Request) {
 		username: "guest",
 		conn:     conn,
 		room:     ws.hub,
-		output:   make(chan []byte, 256),
+		send:     make(chan []byte, 256),
+		prompt:   "None",
 	}
 	ws.clients[client] = true
 	client.room.register <- client
 	go client.read()
 	go client.write()
+	// should then prompt for username
 }
