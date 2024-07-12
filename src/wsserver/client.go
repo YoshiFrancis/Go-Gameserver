@@ -26,8 +26,8 @@ func (c *Client) read() {
 			fmt.Println("Client is going to stop reading!")
 			break
 		}
-		fmt.Println(string(message))
-		// handle message
+		// need to use messages.go and place message in a struct
+		c.room.messages <- string(message)
 	}
 }
 
@@ -36,31 +36,25 @@ func (c *Client) write() {
 		c.conn.Close()
 	}()
 
-	for {
-		select {
-		case message, ok := <-c.send:
-			if !ok {
-				// The hub closed the channel.
-				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
-				return
-			}
-			w, err := c.conn.NextWriter(websocket.TextMessage)
-			if err != nil {
-				return
-			}
+	for message := range c.send {
+		w, err := c.conn.NextWriter(websocket.TextMessage)
+		if err != nil {
+			return
+		}
+		// need to use messages.go and place message in a struct
 
-			w.Write(message)
-			message_count := len(c.send)
-			for i := 0; i < message_count; i++ {
-				w.Write([]byte("\n"))
-				w.Write(<-c.send)
-			}
+		w.Write(message)
+		message_count := len(c.send)
+		for i := 0; i < message_count; i++ {
+			w.Write([]byte("\n"))
+			w.Write(<-c.send)
+		}
 
-			if err := w.Close(); err != nil {
-				return
-			}
-
+		if err := w.Close(); err != nil {
+			return
 		}
 	}
+	// hub closed channel
+	c.conn.WriteMessage(websocket.CloseMessage, []byte{})
 
 }

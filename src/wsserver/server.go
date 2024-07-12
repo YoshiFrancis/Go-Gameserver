@@ -22,17 +22,20 @@ type Server struct {
 	hub          *Room
 	clients      map[*Client]bool
 	broadcast    chan []byte
+	leaving      chan *Client
 	member_count int
 	// later want reference to other server IP's so I can send to them as well (preparation of distributed network)
 }
 
 func NewServer() *Server {
-	return &Server{
-		hub:          NewRoom("Hub", nil),
+	s := &Server{
 		clients:      make(map[*Client]bool),
 		broadcast:    make(chan []byte),
+		leaving:      make(chan *Client),
 		member_count: 0,
 	}
+	s.hub = NewRoom("hub", nil, s)
+	return s
 }
 
 func (ws *Server) Run() {
@@ -41,6 +44,9 @@ func (ws *Server) Run() {
 		select {
 		case msg := <-ws.broadcast:
 			fmt.Println("Broadcasting " + string(msg) + " to all connected channels!")
+		case client := <-ws.leaving:
+			delete(ws.clients, client)
+			close(client.send)
 		default:
 			fmt.Println("Broadcast channel is full!")
 			return
