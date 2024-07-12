@@ -11,6 +11,9 @@ import (
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
+	CheckOrigin: func(r *http.Request) bool {
+		return true // Allow all origins, be cautious with this in production
+	},
 }
 
 const (
@@ -55,6 +58,7 @@ func (ws *Server) Run() {
 }
 
 func (ws *Server) Serve(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("User has connected!")
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println(err)
