@@ -6,25 +6,18 @@
     <title>WebSocket Example</title>
 </head>
 <body>
-    <script>
-        const socket = new WebSocket('ws://localhost:8080/ws');
-
-        socket.addEventListener('open', function (event) {
-            console.log('Connected to the WebSocket server');
-            socket.send('Hello Server!');
-        });
-
-        socket.addEventListener('message', function (event) {
-            console.log('Message from server', event.data);
-        });
-
-        socket.addEventListener('close', function (event) {
-            console.log('Disconnected from the WebSocket server');
-        });
-
-        socket.addEventListener('error', function (event) {
-            console.error('WebSocket error', event);
-        });
-    </script>
+    <form id="connectForm">
+        <label for="username">Username</label><br>
+        <input type="text" name="username" id="username"><br>
+        <label for="url">Ip Address</label><br>
+        <input type="text" name="url" id="url"><br><br>
+        <input type="submit" value="Submit">
+    </form>
+    <form id="sendMessage">
+        <label for="message">Message</label><br>
+        <input type="text" name="message" id="message"><br><br>
+        <input type="submit" value="Submit">
+    </form>
+    <script src="socket.js"></script>
 </body>
 </html>

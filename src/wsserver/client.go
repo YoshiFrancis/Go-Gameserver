@@ -26,6 +26,11 @@ func (c *Client) read() {
 			fmt.Println("Client is going to stop reading!")
 			break
 		}
+		if c.prompt == USERNAME {
+			c.username = string(message)
+			c.prompt = NONE
+			continue
+		}
 		// need to use messages.go and place message in a struct
 		c.room.messages <- string(message)
 	}

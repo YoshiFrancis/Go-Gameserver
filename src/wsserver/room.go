@@ -23,17 +23,19 @@ func NewRoom(title string, parentRoom *Room, server *Server) *Room {
 		parentRoom:   parentRoom,
 		title:        title,
 		member_count: 0,
-		register:     make(chan *Client),
-		unregister:   make(chan *Client),
-		messages:     make(chan string),
+		register:     make(chan *Client, 28),
+		unregister:   make(chan *Client, 28),
+		messages:     make(chan string, 1024),
 		server:       server,
 	}
 }
 
 func (r *Room) run() {
+	fmt.Println("Room is running!")
 	for {
 		select {
 		case client := <-r.register:
+			fmt.Println("user has registered!")
 			r.clients[client] = true
 		case client := <-r.unregister:
 			delete(r.clients, client)
@@ -44,7 +46,7 @@ func (r *Room) run() {
 				r.server.leaving <- client
 			}
 		case message := <-r.messages:
-			fmt.Println(message)
+			fmt.Println("Message received: ", message)
 		}
 	}
 

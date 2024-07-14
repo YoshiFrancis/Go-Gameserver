@@ -9,7 +9,7 @@ import (
 
 func main() {
 	wsserver := wsserver.NewServer()
-
+	go wsserver.Run()
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		wsserver.Serve(w, r)
 	})

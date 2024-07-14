@@ -33,8 +33,8 @@ type Server struct {
 func NewServer() *Server {
 	s := &Server{
 		clients:      make(map[*Client]bool),
-		broadcast:    make(chan []byte),
-		leaving:      make(chan *Client),
+		broadcast:    make(chan []byte, 1024),
+		leaving:      make(chan *Client, 20),
 		member_count: 0,
 	}
 	s.hub = NewRoom("hub", nil, s)
@@ -42,7 +42,7 @@ func NewServer() *Server {
 }
 
 func (ws *Server) Run() {
-	ws.hub.run()
+	go ws.hub.run()
 	for {
 		select {
 		case msg := <-ws.broadcast:
@@ -50,9 +50,6 @@ func (ws *Server) Run() {
 		case client := <-ws.leaving:
 			delete(ws.clients, client)
 			close(client.send)
-		default:
-			fmt.Println("Broadcast channel is full!")
-			return
 		}
 	}
 }
@@ -69,11 +66,10 @@ func (ws *Server) Serve(w http.ResponseWriter, r *http.Request) {
 		conn:     conn,
 		room:     ws.hub,
 		send:     make(chan []byte, 256),
-		prompt:   "None",
+		prompt:   USERNAME,
 	}
 	ws.clients[client] = true
 	client.room.register <- client
 	go client.read()
 	go client.write()
-	// should then prompt for username
 }
