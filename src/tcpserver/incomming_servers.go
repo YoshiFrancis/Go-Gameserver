@@ -9,6 +9,7 @@ type ExtenalTCPServer struct {
 	main_server *TCPServer
 	conn        net.Conn
 	send        chan []byte
+	shutdown    chan bool
 	url         string
 }
 
@@ -17,17 +18,37 @@ func NewExternalTCPServer(main_server *TCPServer, conn net.Conn, url string) *Ex
 		main_server: main_server,
 		conn:        conn,
 		send:        make(chan []byte, 1024),
+		shutdown:    make(chan bool, 1),
 		url:         url,
 	}
 }
 
 func (s *ExtenalTCPServer) run() {
 	defer s.close()
-	for send := range s.send {
-		_, err := s.conn.Write(send)
-		if err != nil {
-			fmt.Println("Error sending to server at: ", s.url)
+	go s.read()
+	for {
+		select {
+		case send := <-s.send:
+			_, err := s.conn.Write(send)
+			if err != nil {
+				fmt.Println("Error sending to server at: ", s.url)
+			}
+		case <-s.shutdown:
+			return
 		}
+	}
+}
+
+func (s *ExtenalTCPServer) read() {
+	for {
+		buffer := make([]byte, 1024)
+		_, err := s.conn.Read(buffer)
+		if err != nil {
+			fmt.Println("Erorr while reading", err.Error())
+			s.shutdown <- true
+			return
+		}
+		s.main_server.read <- buffer
 	}
 }
 

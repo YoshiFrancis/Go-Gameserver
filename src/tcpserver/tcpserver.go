@@ -7,8 +7,8 @@ import (
 
 type TCPServer struct {
 	servers    map[*ExtenalTCPServer]bool
-	broadcast  chan byte
-	read       chan byte
+	broadcast  chan []byte
+	read       chan []byte
 	register   chan *ExtenalTCPServer
 	unregister chan *ExtenalTCPServer
 }
@@ -16,10 +16,10 @@ type TCPServer struct {
 func NewTCPServer() *TCPServer {
 	return &TCPServer{
 		servers:    make(map[*ExtenalTCPServer]bool),
-		broadcast:  make(chan byte),
-		read:       make(chan byte),
-		register:   make(chan *ExtenalTCPServer),
-		unregister: make(chan *ExtenalTCPServer),
+		broadcast:  make(chan []byte, 1024),
+		read:       make(chan []byte, 1024),
+		register:   make(chan *ExtenalTCPServer, 10),
+		unregister: make(chan *ExtenalTCPServer, 10),
 	}
 }
 
@@ -68,12 +68,12 @@ func (s *TCPServer) Close() {
 	close(s.unregister)
 }
 
-func (s *TCPServer) ConnectToServer(url string) {
+func (s *TCPServer) ConnectToServer(url string) bool {
 	conn, err := net.Dial("tcp", url)
 	if err != nil {
 		fmt.Println("Error connecting to server")
-		return
+		return false
 	}
-
 	s.register <- NewExternalTCPServer(s, conn, url)
+	return true
 }
