@@ -29,6 +29,7 @@ func (s *ExtenalTCPServer) run() {
 	for {
 		select {
 		case send := <-s.send:
+			fmt.Println("tcpserver sending message!")
 			_, err := s.conn.Write(send)
 			if err != nil {
 				fmt.Println("Error sending to server at: ", s.url)

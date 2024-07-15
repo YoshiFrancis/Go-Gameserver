@@ -51,18 +51,23 @@ func (s *TCPServer) Run() {
 		select {
 		case message := <-s.broadcast:
 			fmt.Println("Ready to send ", message)
+			for server := range s.servers {
+				fmt.Println("giving message to server's send")
+				server.send <- message
+			}
 		case message := <-s.read:
 			fmt.Println("Received ", message)
 		case c := <-s.register:
 			fmt.Println("Server registered!")
 			s.servers[c] = true
-			c.run()
+			go c.run()
 		case c := <-s.unregister:
 			delete(s.servers, c)
 			fmt.Println("Server unregistered")
 		case msg := <-s.WSRead:
 			fmt.Println("Message received from web server in tcp server")
 			s.broadcast <- msg
+			fmt.Println("wsread msg given to broadcast")
 		}
 	}
 }
