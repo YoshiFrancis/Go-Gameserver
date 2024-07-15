@@ -26,6 +26,8 @@ type Server struct {
 	clients      map[*Client]bool
 	broadcast    chan []byte
 	leaving      chan *Client
+	TCPSend      chan []byte
+	TCPRead      chan []byte
 	member_count int
 	// later want reference to other server IP's so I can send to them as well (preparation of distributed network)
 }
@@ -35,6 +37,7 @@ func NewServer() *Server {
 		clients:      make(map[*Client]bool),
 		broadcast:    make(chan []byte, 1024),
 		leaving:      make(chan *Client, 20),
+		TCPSend:      make(chan []byte, 1024),
 		member_count: 0,
 	}
 	s.hub = NewRoom("hub", nil, s)
@@ -50,6 +53,9 @@ func (ws *Server) Run() {
 		case client := <-ws.leaving:
 			delete(ws.clients, client)
 			close(client.send)
+		case message := <-ws.TCPRead:
+			fmt.Println("MEssage received via tcpserver in websocket server")
+			ws.broadcast <- message
 		}
 	}
 }

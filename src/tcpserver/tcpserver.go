@@ -11,6 +11,8 @@ type TCPServer struct {
 	read       chan []byte
 	register   chan *ExtenalTCPServer
 	unregister chan *ExtenalTCPServer
+	WSSend     chan []byte
+	WSRead     chan []byte
 }
 
 func NewTCPServer() *TCPServer {
@@ -20,6 +22,7 @@ func NewTCPServer() *TCPServer {
 		read:       make(chan []byte, 1024),
 		register:   make(chan *ExtenalTCPServer, 10),
 		unregister: make(chan *ExtenalTCPServer, 10),
+		WSSend:     make(chan []byte, 1024),
 	}
 }
 
@@ -57,6 +60,9 @@ func (s *TCPServer) Run() {
 		case c := <-s.unregister:
 			delete(s.servers, c)
 			fmt.Println("Server unregistered")
+		case msg := <-s.WSRead:
+			fmt.Println("Message received from web server in tcp server")
+			s.broadcast <- msg
 		}
 	}
 }

@@ -47,6 +47,7 @@ func (r *Room) run() {
 			}
 		case message := <-r.messages:
 			fmt.Println("Message received: ", message)
+			r.server.TCPSend <- []byte(message)
 		}
 	}
 
