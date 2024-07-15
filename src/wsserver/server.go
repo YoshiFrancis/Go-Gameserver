@@ -49,7 +49,6 @@ func (ws *Server) Run() {
 	for {
 		select {
 		case msg := <-ws.broadcast:
-			fmt.Println("Broadcasting " + string(msg) + " to all connected channels!")
 			for client := range ws.clients {
 				client.send <- msg
 			}
@@ -57,7 +56,6 @@ func (ws *Server) Run() {
 			delete(ws.clients, client)
 			close(client.send)
 		case message := <-ws.TCPRead:
-			fmt.Println("MEssage received via tcpserver in websocket server")
 			ws.broadcast <- message
 		}
 	}

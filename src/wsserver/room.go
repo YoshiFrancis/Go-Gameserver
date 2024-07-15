@@ -37,6 +37,7 @@ func (r *Room) run() {
 		case client := <-r.register:
 			fmt.Println("user has registered!")
 			r.clients[client] = true
+			r.member_count++
 		case client := <-r.unregister:
 			delete(r.clients, client)
 			r.member_count--

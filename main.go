@@ -38,7 +38,6 @@ func main() {
 
 func input(tcpserver *tcpserver.TCPServer, wsserver *wsserver.Server) {
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Println("hello")
 	for {
 		text, _ := reader.ReadBytes('\n')
 		text = []byte(strings.Replace(string(text), "\n", "", -1))

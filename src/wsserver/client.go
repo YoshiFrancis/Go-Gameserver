@@ -26,13 +26,9 @@ func (c *Client) read() {
 			fmt.Println("Client is going to stop reading!")
 			break
 		}
-		if c.prompt == USERNAME {
-			c.username = string(message)
-			c.prompt = NONE
-			continue
-		}
+
+		c.handleMessage(string(message))
 		// need to use messages.go and place message in a struct
-		c.room.messages <- string(message)
 	}
 }
 
@@ -61,5 +57,15 @@ func (c *Client) write() {
 	}
 	// hub closed channel
 	c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+}
+
+func (c *Client) handleMessage(message string) {
+	if c.prompt != NONE {
+		c.handlePrompt(message)
+	} else if message[0] == '/' {
+		c.handleCommand(message[1:])
+	} else { // broadcast it
+		c.room.messages <- message
+	}
 
 }
