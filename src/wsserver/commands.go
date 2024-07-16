@@ -2,6 +2,7 @@ package wsserver
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -11,11 +12,24 @@ func (c *Client) handleCommand(message string) {
 	if split_msg[0] == "echo" {
 		c.echo(message)
 	} else if split_msg[0] == "join" {
-		fmt.Println("User is trying yto join a lobby: ", split_msg[1])
+		roomId, err := strconv.Atoi(split_msg[1])
+		if err != nil {
+			fmt.Println("Given an invalid room id")
+		}
+
+		new_room, ok := getRoom(c.room.server, roomId)
+		if !ok {
+			fmt.Println("Room id does not exist")
+		}
+		c.switchRoom(new_room)
+
 	} else if split_msg[0] == "create" {
-		fmt.Println("User is trying to create a lobby of the name", split_msg[1])
+		roomTitle := split_msg[1]
+		new_room := NewRoom(roomTitle, c.room, c.room.server)
+		new_room.run()
+		c.switchRoom(new_room)
 	} else if split_msg[0] == "leave" {
-		fmt.Println("User is trying to leave his current lobby")
+		c.switchRoom(c.room.parentRoom)
 	} else if split_msg[0] == "help" {
 		fmt.Println("User is trying to get help!")
 	} else if split_msg[0] == "msg" {

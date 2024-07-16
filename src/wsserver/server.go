@@ -24,23 +24,27 @@ const (
 type Server struct {
 	hub          *Room
 	clients      map[*Client]bool
+	rooms        map[int]*Room
 	broadcast    chan []byte
 	leaving      chan *Client
 	TCPSend      chan []byte
 	TCPRead      chan []byte
 	member_count int
+	roomIdCount  int
 	// later want reference to other server IP's so I can send to them as well (preparation of distributed network)
 }
 
 func NewServer() *Server {
 	s := &Server{
 		clients:      make(map[*Client]bool),
+		rooms:        make(map[int]*Room),
 		broadcast:    make(chan []byte, 1024),
 		leaving:      make(chan *Client, 20),
 		TCPSend:      make(chan []byte, 1024),
 		member_count: 0,
 	}
 	s.hub = NewRoom("hub", nil, s)
+	s.rooms[s.roomIdCount] = s.hub
 	return s
 }
 

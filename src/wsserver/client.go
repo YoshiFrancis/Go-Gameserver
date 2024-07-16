@@ -67,5 +67,9 @@ func (c *Client) handleMessage(message string) {
 	} else { // broadcast it
 		c.room.messages <- message
 	}
+}
 
+func (c *Client) switchRoom(r *Room) {
+	c.room.unregister <- c
+	r.register <- c
 }
