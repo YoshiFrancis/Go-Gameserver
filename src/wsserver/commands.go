@@ -6,14 +6,22 @@ import (
 	"strings"
 )
 
-func (c *Client) handleCommand(message string) {
-	split_msg := strings.Split(message, " ")
-	split_msg[0] = strings.ToLower(split_msg[0])
-	if split_msg[0] == "echo" {
-		c.echo(message)
-	} else if split_msg[0] == "join" {
+func (s *Server) handleCommand(args []string) {
+
+}
+
+func (r *Room) handleCommand(args []string) {
+
+}
+
+func (c *Client) handleCommand(args []string) {
+
+	args[0] = strings.ToLower(args[0])
+	if args[0] == "echo" {
+		c.echo(args[1])
+	} else if args[0] == "join" {
 		fmt.Println("Attempting to join room")
-		roomId, err := strconv.Atoi(split_msg[1])
+		roomId, err := strconv.Atoi(args[1])
 		if err != nil {
 			fmt.Println("Given an invalid room id")
 		}
@@ -25,18 +33,18 @@ func (c *Client) handleCommand(message string) {
 		}
 		c.switchRoom(new_room)
 
-	} else if split_msg[0] == "create" {
-		roomTitle := split_msg[1]
+	} else if args[0] == "create" {
+		roomTitle := args[1]
 		new_room := NewRoom(roomTitle, c.room, c.room.server)
 		go new_room.run()
 		c.switchRoom(new_room)
 		fmt.Println("Created room: ", roomTitle)
-	} else if split_msg[0] == "leave" {
+	} else if args[0] == "leave" {
 		c.switchRoom(c.room.parentRoom)
-	} else if split_msg[0] == "help" {
+	} else if args[0] == "help" {
 		fmt.Println("User is trying to get help!")
-	} else if split_msg[0] == "msg" {
-		fmt.Println("User is trying to msg the user: ", split_msg[1])
+	} else if args[0] == "msg" {
+		fmt.Println("User is trying to msg the user: ", args[1])
 	} else {
 		fmt.Println("Invalid command by user!")
 	}

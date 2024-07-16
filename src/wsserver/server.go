@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/websocket"
+	"github.com/yoshifrancis/go-gameserver/src/messages"
 )
 
 var upgrader = websocket.Upgrader{
@@ -23,10 +25,10 @@ const (
 
 type Server struct {
 	hub          *Room
-	clients      map[*Client]bool
+	clients      map[string]*Client
 	rooms        map[int]*Room
 	broadcast    chan []byte
-	leaving      chan *Client
+	leaving      chan string
 	TCPSend      chan []byte
 	TCPRead      chan []byte
 	member_count int
@@ -36,10 +38,10 @@ type Server struct {
 
 func NewServer() *Server {
 	s := &Server{
-		clients:      make(map[*Client]bool),
+		clients:      make(map[string]*Client),
 		rooms:        make(map[int]*Room),
 		broadcast:    make(chan []byte, 1024),
-		leaving:      make(chan *Client, 20),
+		leaving:      make(chan string, 20),
 		TCPSend:      make(chan []byte, 1024),
 		member_count: 0,
 	}
@@ -52,14 +54,23 @@ func (ws *Server) Run() {
 	for {
 		select {
 		case msg := <-ws.broadcast:
-			for client := range ws.clients {
+			for _, client := range ws.clients {
 				client.send <- msg
 			}
 		case client := <-ws.leaving:
+			close(ws.clients[client].send)
 			delete(ws.clients, client)
-			close(client.send)
 		case message := <-ws.TCPRead:
-			ws.broadcast <- message
+			flag, args := messages.Decode(message)
+			if flag == '-' {
+				ws.handleCommand(args)
+			} else if flag == '+' {
+				roomId, _ := strconv.Atoi(args[1])
+				ws.rooms[roomId].handleCommand(args)
+			} else if flag == '*' {
+				username := args[1]
+				ws.clients[username].handleCommand(args)
+			}
 		}
 	}
 }
@@ -78,8 +89,7 @@ func (ws *Server) Serve(w http.ResponseWriter, r *http.Request) {
 		send:     make(chan []byte, 256),
 		prompt:   USERNAME,
 	}
-	ws.clients[client] = true
-	client.room.register <- client
+
 	go client.read()
 	go client.write()
 }

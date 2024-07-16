@@ -2,6 +2,7 @@ package wsserver
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/gorilla/websocket"
 )
@@ -16,8 +17,8 @@ type Client struct {
 
 func (c *Client) read() {
 	defer func() {
-		c.room.unregister <- c
-		c.room.server.leaving <- c
+		c.room.unregister <- c.username
+		c.room.server.leaving <- c.username
 		c.conn.Close()
 	}()
 
@@ -35,8 +36,8 @@ func (c *Client) read() {
 
 func (c *Client) write() {
 	defer func() {
-		c.room.unregister <- c
-		c.room.server.leaving <- c
+		c.room.unregister <- c.username
+		c.room.server.leaving <- c.username
 		c.conn.Close()
 	}()
 
@@ -66,14 +67,15 @@ func (c *Client) handleMessage(message string) {
 	if c.prompt != NONE {
 		c.handlePrompt(message)
 	} else if message[0] == '/' {
-		c.handleCommand(message[1:])
+		args := strings.Split(message[1:], " ")
+		c.handleCommand(args)
 	} else { // broadcast it
 		c.room.messages <- message
 	}
 }
 
 func (c *Client) switchRoom(r *Room) {
-	c.room.unregister <- c
+	c.room.unregister <- c.username
 	r.register <- c
 	fmt.Println("client joined the room: ", r.roomId)
 }

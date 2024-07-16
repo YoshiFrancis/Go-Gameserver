@@ -54,6 +54,7 @@ func (s *TCPServer) Run() {
 				server.send <- message
 			}
 		case message := <-s.read:
+			s.WSSend <- message
 			fmt.Println("Received ", string(message))
 		case c := <-s.register:
 			fmt.Println("Server registered!")

@@ -5,12 +5,12 @@ import (
 )
 
 type Room struct {
-	clients      map[*Client]bool
+	clients      map[string]*Client
 	parentRoom   *Room
 	title        string
 	member_count int
 	register     chan *Client
-	unregister   chan *Client
+	unregister   chan string
 	messages     chan string
 	shutdown     chan bool
 	server       *Server
@@ -23,12 +23,12 @@ func NewRoom(title string, parentRoom *Room, server *Server) *Room {
 	}
 	server.roomIdCount++
 	new_room := &Room{
-		clients:      make(map[*Client]bool),
+		clients:      make(map[string]*Client),
 		parentRoom:   parentRoom,
 		title:        title,
 		member_count: 0,
 		register:     make(chan *Client, 10),
-		unregister:   make(chan *Client, 10),
+		unregister:   make(chan string, 10),
 		messages:     make(chan string, 1024),
 		shutdown:     make(chan bool, 1),
 		server:       server,
@@ -44,7 +44,7 @@ func (r *Room) run() {
 	for {
 		select {
 		case client := <-r.register:
-			r.clients[client] = true
+			r.clients[client.username] = client
 			r.member_count++
 			client.room = r
 			fmt.Println("user has registered to: ", r.title)
@@ -58,7 +58,7 @@ func (r *Room) run() {
 		case message := <-r.messages:
 			fmt.Println("Message received in " + r.title + ": " + message)
 			// just broadcast for now
-			for c := range r.clients {
+			for _, c := range r.clients {
 				c.send <- []byte(message)
 			}
 			r.server.TCPSend <- []byte(message)
@@ -82,7 +82,7 @@ func (r *Room) close() {
 	close(r.register)
 	close(r.unregister)
 	close(r.shutdown)
-	for client := range r.clients {
+	for _, client := range r.clients {
 		client.switchRoom(r.parentRoom)
 	}
 	delete(r.server.rooms, r.roomId)
