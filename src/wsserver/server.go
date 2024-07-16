@@ -44,7 +44,6 @@ func NewServer() *Server {
 		member_count: 0,
 	}
 	s.hub = NewRoom("hub", nil, s)
-	s.rooms[s.roomIdCount] = s.hub
 	return s
 }
 

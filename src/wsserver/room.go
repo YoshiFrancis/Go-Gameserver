@@ -1,6 +1,8 @@
 package wsserver
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type Room struct {
 	clients      map[*Client]bool
@@ -20,7 +22,7 @@ func NewRoom(title string, parentRoom *Room, server *Server) *Room {
 		title = "Lobby"
 	}
 	server.roomIdCount++
-	return &Room{
+	new_room := &Room{
 		clients:      make(map[*Client]bool),
 		parentRoom:   parentRoom,
 		title:        title,
@@ -32,6 +34,8 @@ func NewRoom(title string, parentRoom *Room, server *Server) *Room {
 		server:       server,
 		roomId:       server.roomIdCount,
 	}
+	server.rooms[server.roomIdCount] = new_room
+	return new_room
 }
 
 func (r *Room) run() {
@@ -40,23 +44,23 @@ func (r *Room) run() {
 	for {
 		select {
 		case client := <-r.register:
-			fmt.Println("user has registered!")
 			r.clients[client] = true
 			r.member_count++
 			client.room = r
+			fmt.Println("user has registered to: ", r.title)
 		case client := <-r.unregister:
 			delete(r.clients, client)
 			r.member_count--
-			if r.parentRoom != nil {
-				r.parentRoom.register <- client
-			} else {
-				r.server.leaving <- client
-			}
 			if r.member_count == -1 && r.title != "hub" {
 				r.shutdown <- true
 			}
+
 		case message := <-r.messages:
-			fmt.Println("Message received: ", message)
+			fmt.Println("Message received in " + r.title + ": " + message)
+			// just broadcast for now
+			for c := range r.clients {
+				c.send <- []byte(message)
+			}
 			r.server.TCPSend <- []byte(message)
 		case <-r.shutdown:
 			return
@@ -65,6 +69,10 @@ func (r *Room) run() {
 }
 
 func getRoom(s *Server, roomId int) (*Room, bool) {
+	fmt.Println(s.rooms)
+	for id, r := range s.rooms {
+		fmt.Println(r.title+" with an id of", id)
+	}
 	new_room, ok := s.rooms[roomId]
 	return new_room, ok
 }

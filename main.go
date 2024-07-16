@@ -33,7 +33,7 @@ func main() {
 
 	go input(tcpserver, wsserver)
 	go tcpserver.Listen(listeningUrl)
-	log.Fatal(http.ListenAndServe(":8081", nil))
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
 func input(tcpserver *tcpserver.TCPServer, wsserver *wsserver.Server) {

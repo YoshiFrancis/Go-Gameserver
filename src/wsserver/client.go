@@ -17,6 +17,7 @@ type Client struct {
 func (c *Client) read() {
 	defer func() {
 		c.room.unregister <- c
+		c.room.server.leaving <- c
 		c.conn.Close()
 	}()
 
@@ -34,6 +35,8 @@ func (c *Client) read() {
 
 func (c *Client) write() {
 	defer func() {
+		c.room.unregister <- c
+		c.room.server.leaving <- c
 		c.conn.Close()
 	}()
 
@@ -72,4 +75,5 @@ func (c *Client) handleMessage(message string) {
 func (c *Client) switchRoom(r *Room) {
 	c.room.unregister <- c
 	r.register <- c
+	fmt.Println("client joined the room: ", r.roomId)
 }
