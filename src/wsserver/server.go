@@ -42,22 +42,22 @@ func NewWSServer(requests chan []byte) *WSServer {
 }
 
 func (ws *WSServer) Run() {
-	defer ws.shutdown()
+	defer ws.Shutdown()
 	for {
 		select {
 		case msg := <-ws.broadcast:
 			for _, client := range ws.clients {
-				client.send <- msg
+				client.Send <- msg
 			}
 		case client := <-ws.leaving:
-			close(ws.clients[client].send)
+			close(ws.clients[client].Send)
 			delete(ws.clients, client)
 			// signal Leader if have one
 		}
 	}
 }
 
-func (ws *WSServer) shutdown() {
+func (ws *WSServer) Shutdown() {
 	close(ws.broadcast)
 	close(ws.leaving)
 }
@@ -77,7 +77,7 @@ func (ws *WSServer) getUsername(conn *websocket.Conn) {
 	client := &Client{
 		username: "",
 		conn:     conn,
-		send:     make(chan []byte, 256),
+		Send:     make(chan []byte, 256),
 		server:   ws,
 	}
 

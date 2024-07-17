@@ -2,14 +2,17 @@ package leaderserver
 
 import (
 	"fmt"
+	"strconv"
 
+	"github.com/yoshifrancis/go-gameserver/src/messages"
 	"github.com/yoshifrancis/go-gameserver/src/tcpserver"
 	"github.com/yoshifrancis/go-gameserver/src/wsserver"
 )
 
 type Leader struct {
+	serverId     int                  // server id
 	servers      map[int]bool         // server id, isExist
-	clients      map[string]int       // username, server id
+	clients      map[string]*User     // username, user pointer
 	hub          *Hub                 // room title, room id
 	lobbies      map[int]*Lobby       // lobby id, Lobby pointer
 	applications map[int]*Application // app id, application pointer
@@ -23,8 +26,9 @@ type Leader struct {
 
 func NewLeader() *Leader {
 	return &Leader{
+		serverId:     1,
 		servers:      make(map[int]bool),
-		clients:      make(map[string]int),
+		clients:      make(map[string]*User),
 		hub:          NewHub(),
 		lobbies:      make(map[int]*Lobby),
 		applications: make(map[int]*Application),
@@ -51,21 +55,43 @@ func (l *Leader) Run() {
 			fmt.Println("Received from WSServer", string(req))
 			l.TCPServer.Broadcast <- req
 		case req := <-l.TCPrequests:
-			// _, args := messages.Decode(req)
-			// message := handleArgs(args)
-			// fmt.Println(message)
+			flag, args := messages.Decode(req)
+			if l.isLeader {
+				message := handleArgs(args)
+				fmt.Println(message)
+				l.TCPServer.Broadcast <- []byte(message)
+			} else {
+				if args[0] == "BROADCAST" {
+					if flag == '-' {
+						if hubId, _ := strconv.Atoi(args[1]); hubId != l.hub.hubId {
+							fmt.Println("Given invalid hub id!")
+							continue
+						}
+						l.hub.broadcast <- []byte(args[2])
+					} else if flag == '+' {
+						lobbyId, _ := strconv.Atoi(args[1])
+						if lobby, ok := l.lobbies[lobbyId]; ok {
+							lobby.broadcast <- []byte(args[2])
+						}
+					}
+				}
+			}
+
 			fmt.Println("Received msg from tcp server: ", string(req))
 		}
 	}
 }
 
 func (l *Leader) shutdown() {
-
+	l.WSServer.Shutdown()
+	l.TCPServer.Shutdown()
+	close(l.TCPrequests)
+	close(l.WSrequests)
 }
 
-func (l *Leader) chooseNewLeader() {
+// func (l *Leader) chooseNewLeader() {
 
-}
+// }
 
 func idGenerator(beginnningId int) func() int {
 	id := beginnningId

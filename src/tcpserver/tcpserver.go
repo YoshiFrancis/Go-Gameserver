@@ -46,6 +46,7 @@ func (s *TCPServer) Listen(url string) {
 }
 
 func (s *TCPServer) Run() {
+	defer s.Shutdown()
 	for {
 		select {
 		case message := <-s.Broadcast:
@@ -65,7 +66,7 @@ func (s *TCPServer) Run() {
 	}
 }
 
-func (s *TCPServer) Close() {
+func (s *TCPServer) Shutdown() {
 	close(s.Broadcast)
 	close(s.requests)
 	close(s.register)

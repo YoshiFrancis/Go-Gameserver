@@ -2,110 +2,41 @@ package leaderserver
 
 type Lobby struct {
 	lobbyId      int
-	users        map[User]bool
+	users        map[string]*User
 	member_count int
-	appId        int
+	broadcast    chan []byte
+	register     chan *User
+	unregister   chan *User
 }
 
-func NewLobby(lobbyId, appId int) *Lobby {
-	return &Lobby{
-		lobbyId:      lobbyId,
-		users:        make(map[User]bool),
+func NewLobby(id int) *Hub {
+	return &Hub{
+		hubId:        id,
+		users:        make(map[string]*User),
 		member_count: 0,
-		appId:        appId,
+		broadcast:    make(chan []byte, 156),
+		register:     make(chan *User, 4),
+		unregister:   make(chan *User, 4),
 	}
 }
 
-/*
-
-package wsserver
-
-import (
-	"fmt"
-)
-
-type Room struct {
-	clients      map[string]*Client
-	parentRoom   *Room
-	title        string
-	member_count int
-	register     chan *Client
-	unregister   chan string
-	messages     chan string
-	shutdown     chan bool
-	server       *Server
-	roomId       int
+func (lobby *Lobby) close() {
+	close(lobby.broadcast)
 }
 
-func NewRoom(title string, parentRoom *Room, server *Server) *Room {
-	if title == "" {
-		title = "Lobby"
-	}
-	server.roomIdCount++
-	new_room := &Room{
-		clients:      make(map[string]*Client),
-		parentRoom:   parentRoom,
-		title:        title,
-		member_count: 0,
-		register:     make(chan *Client, 10),
-		unregister:   make(chan string, 10),
-		messages:     make(chan string, 1024),
-		shutdown:     make(chan bool, 1),
-		server:       server,
-		roomId:       server.roomIdCount,
-	}
-	server.rooms[server.roomIdCount] = new_room
-	return new_room
-}
+func (lobby *Lobby) run() {
+	defer lobby.close()
 
-func (r *Room) run() {
-	fmt.Println("Room is running!")
-	defer r.close()
 	for {
 		select {
-		case client := <-r.register:
-			r.clients[client.username] = client
-			r.member_count++
-			client.room = r
-			fmt.Println("user has registered to: ", r.title)
-		case client := <-r.unregister:
-			delete(r.clients, client)
-			r.member_count--
-			if r.member_count == -1 && r.title != "hub" {
-				r.shutdown <- true
+		case user := <-lobby.register:
+			lobby.users[user.username] = user
+		case user := <-lobby.unregister:
+			delete(lobby.users, user.username)
+		case msg := <-lobby.broadcast:
+			for _, user := range lobby.users {
+				user.send(msg)
 			}
-
-		case message := <-r.messages:
-			fmt.Println("Message received in " + r.title + ": " + message)
-			// just broadcast for now
-			for _, c := range r.clients {
-				c.send <- []byte(message)
-			}
-			r.server.TCPSend <- []byte(message)
-		case <-r.shutdown:
-			return
 		}
 	}
 }
-
-func getRoom(s *Server, roomId int) (*Room, bool) {
-	fmt.Println(s.rooms)
-	for id, r := range s.rooms {
-		fmt.Println(r.title+" with an id of", id)
-	}
-	new_room, ok := s.rooms[roomId]
-	return new_room, ok
-}
-
-func (r *Room) close() {
-	close(r.messages)
-	close(r.register)
-	close(r.unregister)
-	close(r.shutdown)
-	for _, client := range r.clients {
-		client.switchRoom(r.parentRoom)
-	}
-	delete(r.server.rooms, r.roomId)
-}
-
-*/

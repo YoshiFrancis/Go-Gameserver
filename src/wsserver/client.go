@@ -9,7 +9,7 @@ import (
 type Client struct {
 	username string
 	conn     *websocket.Conn
-	send     chan []byte
+	Send     chan []byte
 	server   *WSServer
 }
 
@@ -38,17 +38,17 @@ func (c *Client) write() {
 		c.conn.Close()
 	}()
 
-	for message := range c.send {
+	for message := range c.Send {
 		w, err := c.conn.NextWriter(websocket.TextMessage)
 		if err != nil {
 			return
 		}
 
 		w.Write(message)
-		message_count := len(c.send)
+		message_count := len(c.Send)
 		for i := 0; i < message_count; i++ {
 			w.Write([]byte("\n"))
-			w.Write(<-c.send)
+			w.Write(<-c.Send)
 		}
 
 		if err := w.Close(); err != nil {
