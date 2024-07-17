@@ -89,6 +89,7 @@ func (ws *WSServer) getUsername(conn *websocket.Conn) {
 	}
 
 	client.username = string(message)
+	fmt.Println("New client!", client.username)
 	go client.read()
 	go client.write()
 

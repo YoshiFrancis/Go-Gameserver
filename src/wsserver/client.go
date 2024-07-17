@@ -26,6 +26,8 @@ func (c *Client) read() {
 			break
 		}
 
+		fmt.Println(c.username + " received a message: " + string(message))
+
 		c.server.requests <- message
 	}
 }

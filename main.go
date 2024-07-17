@@ -27,6 +27,7 @@ func main() {
 	tcpserver := tcpserver.NewTCPServer(leader.TCPrequests)
 	leader.WSServer = wsserver
 	leader.TCPServer = tcpserver
+	go leader.Run()
 	go wsserver.Run()
 	go tcpserver.Run()
 
