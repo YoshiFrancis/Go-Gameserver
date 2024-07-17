@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	leaderserver "github.com/yoshifrancis/go-gameserver/src/leader-server"
 	"github.com/yoshifrancis/go-gameserver/src/tcpserver"
 	"github.com/yoshifrancis/go-gameserver/src/wsserver"
 )
@@ -20,10 +21,12 @@ func main() {
 
 	listeningUrl := ":" + os.Args[1]
 
-	wsserver := wsserver.NewServer()
-	tcpserver := tcpserver.NewTCPServer()
-	wsserver.TCPRead = tcpserver.WSSend
-	tcpserver.WSRead = wsserver.TCPSend
+	leader := leaderserver.NewLeader()
+
+	wsserver := wsserver.NewWSServer(leader.WSrequests)
+	tcpserver := tcpserver.NewTCPServer(leader.TCPrequests)
+	leader.WSServer = wsserver
+	leader.TCPServer = tcpserver
 	go wsserver.Run()
 	go tcpserver.Run()
 
@@ -36,7 +39,7 @@ func main() {
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
-func input(tcpserver *tcpserver.TCPServer, wsserver *wsserver.Server) {
+func input(tcpserver *tcpserver.TCPServer, wsserver *wsserver.WSServer) {
 	reader := bufio.NewReader(os.Stdin)
 	for {
 		text, _ := reader.ReadBytes('\n')
@@ -53,8 +56,7 @@ func input(tcpserver *tcpserver.TCPServer, wsserver *wsserver.Server) {
 				}
 			}()
 		} else if text_string[0] == '\\' {
-			tcpserver.WSRead <- []byte(text_string[1:])
-			wsserver.TCPRead <- []byte(text_string[1:])
+			return
 		}
 	}
 }

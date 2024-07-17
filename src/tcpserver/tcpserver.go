@@ -7,20 +7,21 @@ import (
 
 type TCPServer struct {
 	servers    map[*ExtenalTCPServer]bool
-	broadcast  chan []byte
+	Broadcast  chan []byte
 	requests   chan []byte
 	register   chan *ExtenalTCPServer
 	unregister chan *ExtenalTCPServer
 	serverId   int
 }
 
-func NewTCPServer() *TCPServer {
+func NewTCPServer(requests chan []byte) *TCPServer {
 	return &TCPServer{
 		servers:    make(map[*ExtenalTCPServer]bool),
-		broadcast:  make(chan []byte, 1024),
-		requests:   make(chan []byte, 1024),
+		Broadcast:  make(chan []byte, 1024),
+		requests:   requests,
 		register:   make(chan *ExtenalTCPServer, 10),
 		unregister: make(chan *ExtenalTCPServer, 10),
+		serverId:   -1,
 	}
 }
 
@@ -47,7 +48,7 @@ func (s *TCPServer) Listen(url string) {
 func (s *TCPServer) Run() {
 	for {
 		select {
-		case message := <-s.broadcast:
+		case message := <-s.Broadcast:
 			for server := range s.servers {
 				server.send <- message
 			}
@@ -65,7 +66,7 @@ func (s *TCPServer) Run() {
 }
 
 func (s *TCPServer) Close() {
-	close(s.broadcast)
+	close(s.Broadcast)
 	close(s.requests)
 	close(s.register)
 	close(s.unregister)

@@ -30,13 +30,14 @@ type WSServer struct {
 	serverId  int
 }
 
-func NewWSServer() *WSServer {
+func NewWSServer(requests chan []byte) *WSServer {
 	return &WSServer{
 		clients:   make(map[string]*Client),
 		broadcast: make(chan []byte, 1024),
 		leaving:   make(chan string, 20),
 		register:  make(chan string, 12),
-		requests:  make(chan []byte, 1024),
+		requests:  requests,
+		serverId:  -1,
 	}
 }
 
