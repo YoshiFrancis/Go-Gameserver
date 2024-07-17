@@ -8,21 +8,19 @@ import (
 type TCPServer struct {
 	servers    map[*ExtenalTCPServer]bool
 	broadcast  chan []byte
-	read       chan []byte
+	requests   chan []byte
 	register   chan *ExtenalTCPServer
 	unregister chan *ExtenalTCPServer
-	WSSend     chan []byte
-	WSRead     chan []byte
+	serverId   int
 }
 
 func NewTCPServer() *TCPServer {
 	return &TCPServer{
 		servers:    make(map[*ExtenalTCPServer]bool),
 		broadcast:  make(chan []byte, 1024),
-		read:       make(chan []byte, 1024),
+		requests:   make(chan []byte, 1024),
 		register:   make(chan *ExtenalTCPServer, 10),
 		unregister: make(chan *ExtenalTCPServer, 10),
-		WSSend:     make(chan []byte, 1024),
 	}
 }
 
@@ -53,8 +51,7 @@ func (s *TCPServer) Run() {
 			for server := range s.servers {
 				server.send <- message
 			}
-		case message := <-s.read:
-			s.WSSend <- message
+		case message := <-s.requests:
 			fmt.Println("Received ", string(message))
 		case c := <-s.register:
 			fmt.Println("Server registered!")
@@ -63,15 +60,13 @@ func (s *TCPServer) Run() {
 		case c := <-s.unregister:
 			delete(s.servers, c)
 			fmt.Println("Server unregistered")
-		case msg := <-s.WSRead:
-			s.broadcast <- msg
 		}
 	}
 }
 
 func (s *TCPServer) Close() {
 	close(s.broadcast)
-	close(s.read)
+	close(s.requests)
 	close(s.register)
 	close(s.unregister)
 }

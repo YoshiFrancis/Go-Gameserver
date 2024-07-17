@@ -25,7 +25,9 @@ type WSServer struct {
 	clients   map[string]*Client
 	broadcast chan []byte
 	leaving   chan string
+	register  chan string
 	requests  chan []byte
+	serverId  int
 }
 
 func NewWSServer() *WSServer {
@@ -33,6 +35,7 @@ func NewWSServer() *WSServer {
 		clients:   make(map[string]*Client),
 		broadcast: make(chan []byte, 1024),
 		leaving:   make(chan string, 20),
+		register:  make(chan string, 12),
 		requests:  make(chan []byte, 1024),
 	}
 }
@@ -65,12 +68,27 @@ func (ws *WSServer) Serve(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
+
+	go ws.getUsername(conn)
+}
+
+func (ws *WSServer) getUsername(conn *websocket.Conn) {
 	client := &Client{
-		username: "guest",
+		username: "",
 		conn:     conn,
 		send:     make(chan []byte, 256),
+		server:   ws,
 	}
 
+	_, message, err := conn.ReadMessage()
+	if err != nil {
+		fmt.Println("Client is going to stop reading!")
+		conn.Close()
+		return
+	}
+
+	client.username = string(message)
 	go client.read()
 	go client.write()
+
 }

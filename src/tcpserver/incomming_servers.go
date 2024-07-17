@@ -49,7 +49,7 @@ func (s *ExtenalTCPServer) read() {
 			s.shutdown <- true
 			return
 		}
-		s.main_server.read <- buffer
+		s.main_server.requests <- buffer
 	}
 }
 
