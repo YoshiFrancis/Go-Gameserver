@@ -51,7 +51,7 @@ func (s *TCPServer) Run() {
 		select {
 		case message := <-s.Broadcast:
 			for server := range s.servers {
-				server.send <- message
+				server.Send <- message
 			}
 		case message := <-s.requests:
 			fmt.Println("Received ", string(message))

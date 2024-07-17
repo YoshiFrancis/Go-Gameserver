@@ -10,32 +10,26 @@ import (
 )
 
 type Leader struct {
-	serverId     int                  // server id
-	servers      map[int]bool         // server id, isExist
-	clients      map[string]*User     // username, user pointer
-	hub          *Hub                 // room title, room id
-	lobbies      map[int]*Lobby       // lobby id, Lobby pointer
-	applications map[int]*Application // app id, application pointer
-	WSrequests   chan []byte          // channel of incoming requests from websocket server
-	TCPrequests  chan []byte          // channel of incoming requests from tcp server
-	WSServer     *wsserver.WSServer   // access to websocket server
-	TCPServer    *tcpserver.TCPServer // access to tcp server
-	idGen        func() int           // used to generate ids, get function from a closure
-	isLeader     bool                 // indicate if leader or not
+	WSServer    *wsserver.WSServer   // access to websocket server
+	TCPServer   *tcpserver.TCPServer // access to tcp server
+	WSrequests  chan []byte          // channel of incoming requests from websocket server
+	TCPrequests chan []byte          // channel of incoming requests from tcp server
+	isLeader    bool                 // indicate if leader or not
+	idGen       func() int           // used to generate ids, get function from a closure
+	hub         *Hub                 // room title, room id
+	lobbies     map[int]*Lobby       // lobby id, Lobby pointer
+	Users       map[string]*User     // username, user pointer
 }
 
 func NewLeader() *Leader {
 	return &Leader{
-		serverId:     1,
-		servers:      make(map[int]bool),
-		clients:      make(map[string]*User),
-		hub:          NewHub(0),
-		lobbies:      make(map[int]*Lobby),
-		applications: make(map[int]*Application),
-		WSrequests:   make(chan []byte, 1024),
-		TCPrequests:  make(chan []byte, 1024),
-		idGen:        idGenerator(0),
-		isLeader:     true,
+		Users:       make(map[string]*User),
+		hub:         NewHub(0),
+		lobbies:     make(map[int]*Lobby),
+		WSrequests:  make(chan []byte, 1024),
+		TCPrequests: make(chan []byte, 1024),
+		idGen:       idGenerator(0),
+		isLeader:    true,
 	}
 }
 
@@ -46,8 +40,8 @@ func (l *Leader) Run() {
 		select {
 		case req := <-l.WSrequests:
 			if l.isLeader {
-				_, args := messages.Decode(req)
-				message := handleArgs(args)
+				flag, args := messages.Decode(req)
+				message := handleArgs(flag, args)
 				l.TCPServer.Broadcast <- []byte(message)
 			} else {
 				fmt.Println("Received from WSServer", string(req))
@@ -56,7 +50,7 @@ func (l *Leader) Run() {
 		case req := <-l.TCPrequests:
 			flag, args := messages.Decode(req)
 			if l.isLeader {
-				message := handleArgs(args)
+				message := handleArgs(flag, args)
 				fmt.Println(message)
 				l.TCPServer.Broadcast <- []byte(message)
 			} else {

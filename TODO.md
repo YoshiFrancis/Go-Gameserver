@@ -5,5 +5,6 @@
 5. Communicate between servers for broadcasting and keeping track of rooms
 
 CURRENT
-- Test out the intercommuncation protocols between servers
-- Figure out how to let servers keep track of all clients conected to all servers
+Wednesday - DO ALL LEADER IMPLEMENTATION (the rleader receiving / handlign requests then broadcasting)
+          - this includes all the room functionality and such
+Thursday - Configure a clean joining of two servers together
