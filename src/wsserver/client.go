@@ -2,7 +2,6 @@ package wsserver
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/gorilla/websocket"
 )
@@ -10,15 +9,13 @@ import (
 type Client struct {
 	username string
 	conn     *websocket.Conn
-	room     *Room
 	send     chan []byte
-	prompt   string
+	server   *WSServer
 }
 
 func (c *Client) read() {
 	defer func() {
-		c.room.unregister <- c.username
-		c.room.server.leaving <- c.username
+		c.server.leaving <- c.username
 		c.conn.Close()
 	}()
 
@@ -29,15 +26,13 @@ func (c *Client) read() {
 			break
 		}
 
-		c.handleMessage(string(message))
-		// need to use messages.go and place message in a struct
+		c.server.requests <- message
 	}
 }
 
 func (c *Client) write() {
 	defer func() {
-		c.room.unregister <- c.username
-		c.room.server.leaving <- c.username
+		c.server.leaving <- c.username
 		c.conn.Close()
 	}()
 
@@ -46,7 +41,6 @@ func (c *Client) write() {
 		if err != nil {
 			return
 		}
-		// need to use messages.go and place message in a struct
 
 		w.Write(message)
 		message_count := len(c.send)
@@ -59,23 +53,6 @@ func (c *Client) write() {
 			return
 		}
 	}
-	// hub closed channel
+
 	c.conn.WriteMessage(websocket.CloseMessage, []byte{})
-}
-
-func (c *Client) handleMessage(message string) {
-	if c.prompt != NONE {
-		c.handlePrompt(message)
-	} else if message[0] == '/' {
-		args := strings.Split(message[1:], " ")
-		c.handleCommand(args)
-	} else { // broadcast it
-		c.room.messages <- message
-	}
-}
-
-func (c *Client) switchRoom(r *Room) {
-	c.room.unregister <- c.username
-	r.register <- c
-	fmt.Println("client joined the room: ", r.roomId)
 }

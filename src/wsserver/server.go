@@ -4,10 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/gorilla/websocket"
-	"github.com/yoshifrancis/go-gameserver/src/messages"
 )
 
 var upgrader = websocket.Upgrader{
@@ -24,36 +22,23 @@ const (
 )
 
 type WSServer struct {
+	clients   map[string]*Client
+	broadcast chan []byte
+	leaving   chan string
+	requests  chan []byte
 }
 
-type Server struct {
-	hub          *Room
-	clients      map[string]*Client
-	rooms        map[int]*Room
-	broadcast    chan []byte
-	leaving      chan string
-	TCPSend      chan []byte
-	TCPRead      chan []byte
-	member_count int
-	roomIdCount  int
-	// later want reference to other server IP's so I can send to them as well (preparation of distributed network)
-}
-
-func NewServer() *Server {
-	s := &Server{
-		clients:      make(map[string]*Client),
-		rooms:        make(map[int]*Room),
-		broadcast:    make(chan []byte, 1024),
-		leaving:      make(chan string, 20),
-		TCPSend:      make(chan []byte, 1024),
-		member_count: 0,
+func NewWSServer() *WSServer {
+	return &WSServer{
+		clients:   make(map[string]*Client),
+		broadcast: make(chan []byte, 1024),
+		leaving:   make(chan string, 20),
+		requests:  make(chan []byte, 1024),
 	}
-	s.hub = NewRoom("hub", nil, s)
-	return s
 }
 
-func (ws *Server) Run() {
-	go ws.hub.run()
+func (ws *WSServer) Run() {
+	defer ws.shutdown()
 	for {
 		select {
 		case msg := <-ws.broadcast:
@@ -61,25 +46,19 @@ func (ws *Server) Run() {
 				client.send <- msg
 			}
 		case client := <-ws.leaving:
-			ws.clients[client].room.unregister <- client
 			close(ws.clients[client].send)
 			delete(ws.clients, client)
-		case message := <-ws.TCPRead:
-			flag, args := messages.Decode(message)
-			if flag == '-' {
-				go ws.handleCommand(args)
-			} else if flag == '+' {
-				roomId, _ := strconv.Atoi(args[1])
-				go ws.rooms[roomId].handleCommand(args)
-			} else if flag == '*' {
-				username := args[1]
-				go ws.clients[username].handleCommand(args)
-			}
+			// signal Leader if have one
 		}
 	}
 }
 
-func (ws *Server) Serve(w http.ResponseWriter, r *http.Request) {
+func (ws *WSServer) shutdown() {
+	close(ws.broadcast)
+	close(ws.leaving)
+}
+
+func (ws *WSServer) Serve(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("User has connected!")
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -89,9 +68,7 @@ func (ws *Server) Serve(w http.ResponseWriter, r *http.Request) {
 	client := &Client{
 		username: "guest",
 		conn:     conn,
-		room:     ws.hub,
 		send:     make(chan []byte, 256),
-		prompt:   USERNAME,
 	}
 
 	go client.read()
