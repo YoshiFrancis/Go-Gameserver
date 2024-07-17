@@ -49,6 +49,7 @@ func (s *ExtenalTCPServer) read() {
 			s.Shutdown <- true
 			return
 		}
+		fmt.Println("External tcp server received message")
 		s.main_server.requests <- buffer
 	}
 }

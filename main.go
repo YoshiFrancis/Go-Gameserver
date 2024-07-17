@@ -9,17 +9,19 @@ import (
 	"strings"
 
 	leaderserver "github.com/yoshifrancis/go-gameserver/src/leader-server"
+	"github.com/yoshifrancis/go-gameserver/src/messages"
 	"github.com/yoshifrancis/go-gameserver/src/tcpserver"
 	"github.com/yoshifrancis/go-gameserver/src/wsserver"
 )
 
 func main() {
 
-	if len(os.Args) != 2 {
-		log.Fatal("Usgae: go run main.go <PORT>")
+	if len(os.Args) != 3 {
+		log.Fatal("Usgae: go run main.go <WS PORT> < TCPPORT>")
 	}
 
-	listeningUrl := ":" + os.Args[1]
+	wsPort := ":" + os.Args[1]
+	tcpPort := ":" + os.Args[2]
 
 	leader := leaderserver.NewLeader()
 
@@ -35,12 +37,12 @@ func main() {
 		wsserver.Serve(w, r)
 	})
 
-	go input(tcpserver, wsserver)
-	go tcpserver.Listen(listeningUrl)
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	go input(tcpserver)
+	go tcpserver.Listen(tcpPort)
+	log.Fatal(http.ListenAndServe(wsPort, nil))
 }
 
-func input(tcpserver *tcpserver.TCPServer, wsserver *wsserver.WSServer) {
+func input(tcpserver *tcpserver.TCPServer) {
 	reader := bufio.NewReader(os.Stdin)
 	for {
 		text, _ := reader.ReadBytes('\n')
@@ -57,7 +59,11 @@ func input(tcpserver *tcpserver.TCPServer, wsserver *wsserver.WSServer) {
 				}
 			}()
 		} else if text_string[0] == '\\' {
-			return
+			msg := messages.HubBroadcast("server", 1, text_string[1:])
+			fmt.Println("sending msg: ", msg)
+			tcpserver.Broadcast <- []byte(msg)
+		} else {
+			fmt.Println("Invalid command")
 		}
 	}
 }

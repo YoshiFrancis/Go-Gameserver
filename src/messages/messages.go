@@ -7,9 +7,11 @@ import (
 )
 
 func Decode(req []byte) (flag byte, args []string) {
+	fmt.Println("Decoding!")
 	r := bytes.NewReader(req)
 	flag, _ = r.ReadByte() // reading the flag. lowkey dont know what to do with it right now
-	argc, _ := r.ReadByte()
+	argcByte, _ := r.ReadByte()
+	argc := argcByte - '0'
 	args = make([]string, int(argc))
 
 	if flag != '-' && flag != '+' && flag != '*' {
@@ -54,7 +56,12 @@ func readCLRF(r *bytes.Reader) bool {
 
 func readSize(r *bytes.Reader) (int, bool) {
 	var size []byte
-	for b, _ := r.ReadByte(); b != '\r'; {
+
+	for {
+		b, _ := r.ReadByte()
+		if b == '\r' {
+			break
+		}
 		size = append(size, b)
 	}
 	if b, err := r.ReadByte(); b != '\n' || err != nil {
@@ -104,6 +111,13 @@ func RoomJoinUser(username string, roomId int) string {
 	roomIdStr := strconv.Itoa(roomId)
 	roomIdLength := len(roomIdStr)
 	message := fmt.Sprintf("+3\r\n4\r\nJOIN\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", roomIdLength, roomIdStr, len(username), username)
+	return message
+}
+
+func HubBroadcast(username string, roomId int, broadcast string) string {
+	roomIdStr := strconv.Itoa(roomId)
+	roomIdLength := len(roomIdStr)
+	message := fmt.Sprintf("-4\r\n9\r\nBROADCAST\r\n%d\r\n%s\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", roomIdLength, roomIdStr, len(username), username, len(broadcast), broadcast)
 	return message
 }
 

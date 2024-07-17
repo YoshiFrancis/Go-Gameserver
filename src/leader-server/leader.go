@@ -51,6 +51,7 @@ func (l *Leader) Run() {
 				l.TCPServer.Broadcast <- req // should give to leader
 			}
 		case req := <-l.TCPrequests:
+			fmt.Println("Received message from tcp server")
 			flag, args := messages.Decode(req)
 			if l.isLeader {
 				message := l.handleArgs(flag, args)
@@ -95,4 +96,15 @@ func idGenerator(beginnningId int) func() int {
 		id++
 		return id
 	}
+}
+
+func (l *Leader) disconnectUser(username string) {
+	user := l.Users[username]
+	roomId := user.roomId
+	if roomId == 1 {
+		l.hub.unregister <- user
+	} else {
+		l.lobbies[roomId].unregister <- user
+	}
+	delete(l.Users, username)
 }

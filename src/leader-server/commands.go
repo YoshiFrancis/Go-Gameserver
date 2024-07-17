@@ -21,9 +21,26 @@ func (l *Leader) handleArgs(flag byte, args []string) (res string) {
 		case "shutdown": // shutting server down
 			break
 		case "disc": // disconnecting user
-			break
+			username := args[2]
+			serverId, err := strconv.Atoi(args[1])
+			if err != nil {
+				fmt.Println("given invalid serverid")
+			}
+			user := l.Users[username]
+			if user.serverId != serverId {
+				fmt.Println("User does not belong to that server!")
+				return
+			}
+			l.disconnectUser(username)
 		case "join": // user is joining
-			break
+			username := args[2]
+			serverId, err := strconv.Atoi(args[1])
+			if err != nil {
+				fmt.Println("given invalid serverid")
+			}
+			user := NewUser(username, serverId, l.hub.hubId, l.WSServer.Clients[username])
+			l.Users[username] = user
+			l.hub.register <- user
 		default:
 			fmt.Println("Given an invalid server command")
 			return

@@ -22,7 +22,7 @@ const (
 )
 
 type WSServer struct {
-	clients   map[string]*Client
+	Clients   map[string]*Client
 	broadcast chan []byte
 	leaving   chan string
 	register  chan string
@@ -32,7 +32,7 @@ type WSServer struct {
 
 func NewWSServer(requests chan []byte) *WSServer {
 	return &WSServer{
-		clients:   make(map[string]*Client),
+		Clients:   make(map[string]*Client),
 		broadcast: make(chan []byte, 1024),
 		leaving:   make(chan string, 20),
 		register:  make(chan string, 12),
@@ -46,12 +46,12 @@ func (ws *WSServer) Run() {
 	for {
 		select {
 		case msg := <-ws.broadcast:
-			for _, client := range ws.clients {
+			for _, client := range ws.Clients {
 				client.Send <- msg
 			}
 		case client := <-ws.leaving:
-			close(ws.clients[client].Send)
-			delete(ws.clients, client)
+			close(ws.Clients[client].Send)
+			delete(ws.Clients, client)
 			// signal Leader if have one
 		}
 	}
