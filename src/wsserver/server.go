@@ -23,6 +23,9 @@ const (
 	USERNAME = "Username"
 )
 
+type WSServer struct {
+}
+
 type Server struct {
 	hub          *Room
 	clients      map[string]*Client
