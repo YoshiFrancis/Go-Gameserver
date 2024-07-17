@@ -29,7 +29,7 @@ func NewLeader() *Leader {
 		serverId:     1,
 		servers:      make(map[int]bool),
 		clients:      make(map[string]*User),
-		hub:          NewHub(),
+		hub:          NewHub(0),
 		lobbies:      make(map[int]*Lobby),
 		applications: make(map[int]*Application),
 		WSrequests:   make(chan []byte, 1024),
@@ -45,15 +45,14 @@ func (l *Leader) Run() {
 	for {
 		select {
 		case req := <-l.WSrequests:
-			// if l.isLeader {
-			// 	_, args := messages.Decode(req)
-			// 	message := handleArgs(args)
-			// 	l.TCPServer.Broadcast <- []byte(message)
-			// } else {
-			// 	l.TCPServer.Broadcast <- req
-			// }
-			fmt.Println("Received from WSServer", string(req))
-			l.TCPServer.Broadcast <- req
+			if l.isLeader {
+				_, args := messages.Decode(req)
+				message := handleArgs(args)
+				l.TCPServer.Broadcast <- []byte(message)
+			} else {
+				fmt.Println("Received from WSServer", string(req))
+				l.TCPServer.Broadcast <- req // should give to leader
+			}
 		case req := <-l.TCPrequests:
 			flag, args := messages.Decode(req)
 			if l.isLeader {
