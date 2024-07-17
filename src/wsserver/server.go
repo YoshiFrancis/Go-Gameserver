@@ -58,18 +58,19 @@ func (ws *Server) Run() {
 				client.send <- msg
 			}
 		case client := <-ws.leaving:
+			ws.clients[client].room.unregister <- client
 			close(ws.clients[client].send)
 			delete(ws.clients, client)
 		case message := <-ws.TCPRead:
 			flag, args := messages.Decode(message)
 			if flag == '-' {
-				ws.handleCommand(args)
+				go ws.handleCommand(args)
 			} else if flag == '+' {
 				roomId, _ := strconv.Atoi(args[1])
-				ws.rooms[roomId].handleCommand(args)
+				go ws.rooms[roomId].handleCommand(args)
 			} else if flag == '*' {
 				username := args[1]
-				ws.clients[username].handleCommand(args)
+				go ws.clients[username].handleCommand(args)
 			}
 		}
 	}

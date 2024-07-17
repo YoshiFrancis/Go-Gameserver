@@ -7,11 +7,30 @@ import (
 )
 
 func (s *Server) handleCommand(args []string) {
-
+	switch args[0] {
+	case "SHUTDOWN":
+		break
+	case "CREATION":
+		break
+	case "ACCEPT":
+		break
+	case "DISC":
+		username := args[1]
+		s.leaving <- username
+	}
 }
 
 func (r *Room) handleCommand(args []string) {
-
+	args[0] = strings.ToLower(args[0])
+	switch args[0] {
+	case "join":
+		username := args[2]
+		r.server.clients[username].switchRoom(r)
+	case "broadcast":
+		for _, client := range r.clients {
+			client.send <- []byte(args[2])
+		}
+	}
 }
 
 func (c *Client) handleCommand(args []string) {
@@ -32,7 +51,6 @@ func (c *Client) handleCommand(args []string) {
 			return
 		}
 		c.switchRoom(new_room)
-
 	} else if args[0] == "create" {
 		roomTitle := args[1]
 		new_room := NewRoom(roomTitle, c.room, c.room.server)

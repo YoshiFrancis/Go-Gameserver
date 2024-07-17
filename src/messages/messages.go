@@ -74,15 +74,29 @@ func readSize(r *bytes.Reader) (int, bool) {
 // _ -> for groups (if implemented in the future)
 // flag \r\n n arguments \r\n arg[0] \r\n arg[1] ... \r\n arg[n-1] \r\n\r\n
 
-func ServerShutdown() string {
-	message := "-1\r\n8\r\nSHUTDOWN\r\n\r\n"
+func ServerAcceptServer(serverId int) string {
+	serverIdStr := strconv.Itoa(serverId)
+	serverIdLength := len(serverIdStr)
+	message := fmt.Sprintf("-2\r\n6\r\nACCEPT\r\n%d\r\n%s\r\n\r\n", serverIdLength, serverIdStr)
 	return message
 }
 
-func ServerDisconnectUser(username string, roomId int) string {
-	roomIdStr := strconv.Itoa(roomId)
-	roomIdLength := len(roomIdStr)
-	message := fmt.Sprintf("-3\r\n4\r\nDISC\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", roomIdLength, roomIdStr, len(username), username)
+func ServerCreation(serverId int) string {
+	serverIdStr := strconv.Itoa(serverId)
+	serverIdLength := len(serverIdStr)
+	message := fmt.Sprintf("-2\r\n8\r\nCREATION\r\n%d\r\n%s\r\n\r\n", serverIdLength, serverIdStr)
+	return message
+}
+
+func ServerShutdown(serverId int) string {
+	serverIdStr := strconv.Itoa(serverId)
+	serverIdLength := len(serverIdStr)
+	message := fmt.Sprintf("-2\r\n8\r\nSHUTDOWN\r\n%d\r\n%s\r\n\r\n", serverIdLength, serverIdStr)
+	return message
+}
+
+func ServerDisconnectUser(username string) string {
+	message := fmt.Sprintf("-2\r\n4\r\nDISC\r\n%d\r\n%s\r\n\r\n", len(username), username)
 	return message
 }
 
