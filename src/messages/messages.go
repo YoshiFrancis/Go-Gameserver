@@ -7,7 +7,7 @@ import (
 )
 
 func Decode(req []byte) (flag byte, args []string) {
-	fmt.Println("Decoding!")
+	fmt.Println("Decoding!", string(req))
 	r := bytes.NewReader(req)
 	flag, _ = r.ReadByte() // reading the flag. lowkey dont know what to do with it right now
 	argcByte, _ := r.ReadByte()
@@ -104,6 +104,13 @@ func ServerShutdown(serverId int) string {
 
 func ServerDisconnectUser(username string) string {
 	message := fmt.Sprintf("-2\r\n4\r\nDISC\r\n%d\r\n%s\r\n\r\n", len(username), username)
+	return message
+}
+
+func ServerJoinUser(username string, serverId int) string {
+	serverIdStr := strconv.Itoa(serverId)
+	serverIdLength := len(serverIdStr)
+	message := fmt.Sprintf("-3\r\n4\r\nJOIN\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", serverIdLength, serverIdStr, len(username), username)
 	return message
 }
 

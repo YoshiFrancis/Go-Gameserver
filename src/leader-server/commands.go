@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+
+	"github.com/yoshifrancis/go-gameserver/src/messages"
 )
 
 func (l *Leader) handleArgs(flag byte, args []string) (res string) {
@@ -33,6 +35,8 @@ func (l *Leader) handleArgs(flag byte, args []string) (res string) {
 			}
 			l.disconnectUser(username)
 		case "join": // user is joining
+			fmt.Println("User is joining leader!")
+			fmt.Println(args)
 			username := args[2]
 			serverId, err := strconv.Atoi(args[1])
 			if err != nil {
@@ -41,6 +45,8 @@ func (l *Leader) handleArgs(flag byte, args []string) (res string) {
 			user := NewUser(username, serverId, l.hub.hubId, l.WSServer.Clients[username])
 			l.Users[username] = user
 			l.hub.register <- user
+
+			res = messages.ServerJoinUser(username, 1)
 		default:
 			fmt.Println("Given an invalid server command")
 			return

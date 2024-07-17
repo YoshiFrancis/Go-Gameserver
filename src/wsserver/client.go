@@ -27,8 +27,7 @@ func (c *Client) read() {
 		}
 
 		fmt.Println(c.username + " received a message: " + string(message))
-
-		c.server.requests <- message
+		c.server.requests <- []byte(c.handleCommand(string(message)))
 	}
 }
 

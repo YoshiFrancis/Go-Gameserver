@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"github.com/yoshifrancis/go-gameserver/src/messages"
 )
 
 var upgrader = websocket.Upgrader{
@@ -90,6 +91,8 @@ func (ws *WSServer) getUsername(conn *websocket.Conn) {
 
 	client.username = string(message)
 	fmt.Println("New client!", client.username)
+	register_msg := messages.ServerJoinUser(client.username, ws.serverId)
+	ws.requests <- []byte(register_msg)
 	go client.read()
 	go client.write()
 
