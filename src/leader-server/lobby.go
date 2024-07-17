@@ -9,9 +9,9 @@ type Lobby struct {
 	unregister   chan *User
 }
 
-func NewLobby(id int) *Hub {
-	return &Hub{
-		hubId:        id,
+func NewLobby(id int) *Lobby {
+	return &Lobby{
+		lobbyId:      id,
 		users:        make(map[string]*User),
 		member_count: 0,
 		broadcast:    make(chan []byte, 156),

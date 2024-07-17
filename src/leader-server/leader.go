@@ -3,6 +3,7 @@ package leaderserver
 import (
 	"fmt"
 	"strconv"
+	"sync"
 
 	"github.com/yoshifrancis/go-gameserver/src/messages"
 	"github.com/yoshifrancis/go-gameserver/src/tcpserver"
@@ -19,6 +20,7 @@ type Leader struct {
 	hub         *Hub                 // room title, room id
 	lobbies     map[int]*Lobby       // lobby id, Lobby pointer
 	Users       map[string]*User     // username, user pointer
+	mutex       sync.Mutex
 }
 
 func NewLeader() *Leader {
@@ -30,6 +32,7 @@ func NewLeader() *Leader {
 		TCPrequests: make(chan []byte, 1024),
 		idGen:       idGenerator(0),
 		isLeader:    true,
+		mutex:       sync.Mutex{},
 	}
 }
 
@@ -41,7 +44,7 @@ func (l *Leader) Run() {
 		case req := <-l.WSrequests:
 			if l.isLeader {
 				flag, args := messages.Decode(req)
-				message := handleArgs(flag, args)
+				message := l.handleArgs(flag, args)
 				l.TCPServer.Broadcast <- []byte(message)
 			} else {
 				fmt.Println("Received from WSServer", string(req))
@@ -50,7 +53,7 @@ func (l *Leader) Run() {
 		case req := <-l.TCPrequests:
 			flag, args := messages.Decode(req)
 			if l.isLeader {
-				message := handleArgs(flag, args)
+				message := l.handleArgs(flag, args)
 				fmt.Println(message)
 				l.TCPServer.Broadcast <- []byte(message)
 			} else {
