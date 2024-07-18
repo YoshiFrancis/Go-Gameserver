@@ -34,9 +34,9 @@ func (l *Leader) handleArgs(flag byte, args []string) (res string) {
 				return
 			}
 			l.disconnectUser(username)
+			res = messages.ServerDisconnectUser(username)
 		case "join": // user is joining
 			fmt.Println("User is joining leader!")
-			fmt.Println(args)
 			username := args[2]
 			serverId, err := strconv.Atoi(args[1])
 			if err != nil {
@@ -46,7 +46,8 @@ func (l *Leader) handleArgs(flag byte, args []string) (res string) {
 			l.Users[username] = user
 			l.hub.register <- user
 
-			res = messages.ServerJoinUser(username, 1)
+			res = messages.ServerJoinUser(username, serverId)
+			fmt.Println("User joining message:", res)
 		default:
 			fmt.Println("Given an invalid server command")
 			return
@@ -61,10 +62,10 @@ func (l *Leader) handleArgs(flag byte, args []string) (res string) {
 			fmt.Println("given invalid hub id")
 			return
 		}
-
+		fmt.Println(args)
 		switch args[0] {
 		case "broadcast":
-			l.hub.broadcast <- []byte(args[2])
+			res = messages.HubBroadcast(args[2], l.hub.hubId, args[3])
 		default:
 			fmt.Println("Given invalid hub command")
 			return
@@ -75,14 +76,15 @@ func (l *Leader) handleArgs(flag byte, args []string) (res string) {
 			fmt.Println("given an invalid room id")
 			return
 		}
-		lobby, ok := l.lobbies[lobbyId]
+		_, ok := l.lobbies[lobbyId]
 		if !ok {
 			fmt.Println("given invalid hub id")
 			return
 		}
 		switch args[0] {
 		case "broadcast":
-			lobby.broadcast <- []byte(args[2])
+			username := args[2]
+			res = messages.RoomBroadcast(username, l.Users[username].roomId, args[3])
 		default:
 			fmt.Println("Given invalid lobby id")
 		}
@@ -103,5 +105,5 @@ func (l *Leader) handleArgs(flag byte, args []string) (res string) {
 		}
 	}
 
-	return ""
+	return
 }

@@ -45,6 +45,7 @@ func (l *Leader) Run() {
 			if l.isLeader {
 				flag, args := messages.Decode(req)
 				message := l.handleArgs(flag, args)
+				fmt.Println("Received message from WSSS:", string(message))
 				l.TCPServer.Broadcast <- []byte(message)
 			} else {
 				fmt.Println("Received from WSServer", string(req))

@@ -60,7 +60,6 @@ func input(tcpserver *tcpserver.TCPServer) {
 			}()
 		} else if text_string[0] == '\\' {
 			msg := messages.HubBroadcast("server", 1, text_string[1:])
-			fmt.Println("sending msg: ", msg)
 			tcpserver.Broadcast <- []byte(msg)
 		} else {
 			fmt.Println("Invalid command")

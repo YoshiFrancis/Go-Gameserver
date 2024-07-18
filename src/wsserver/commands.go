@@ -32,7 +32,10 @@ func (c *Client) handleCommand(message string) (request_msg string) {
 	} else if split_msg[0] == "msg" {
 		fmt.Println("User is trying to msg the user: ", split_msg[1])
 	} else {
-		fmt.Println("Invalid command by user!")
+		if len(split_msg) == 1 {
+			request_msg = messages.HubBroadcast(c.username, 1, split_msg[0])
+			fmt.Println("Broadcasting to hub", request_msg)
+		}
 	}
 	return
 }
