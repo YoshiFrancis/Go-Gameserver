@@ -23,16 +23,7 @@ func (l *Leader) handleArgs(flag byte, args []string) (res string) {
 		case "shutdown": // shutting server down
 			break
 		case "disc": // disconnecting user
-			username := args[2]
-			serverId, err := strconv.Atoi(args[1])
-			if err != nil {
-				fmt.Println("given invalid serverid")
-			}
-			user := l.Users[username]
-			if user.serverId != serverId {
-				fmt.Println("User does not belong to that server!")
-				return
-			}
+			username := args[1]
 			l.disconnectUser(username)
 			res = messages.ServerDisconnectUser(username)
 		case "join": // user is joining

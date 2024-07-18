@@ -102,10 +102,14 @@ func idGenerator(beginnningId int) func() int {
 func (l *Leader) disconnectUser(username string) {
 	user := l.Users[username]
 	roomId := user.roomId
-	if roomId == 1 {
+	if roomId == l.hub.hubId {
 		l.hub.unregister <- user
 	} else {
-		l.lobbies[roomId].unregister <- user
+		lobby, ok := l.lobbies[roomId]
+		if ok {
+			lobby.unregister <- user
+		}
 	}
+
 	delete(l.Users, username)
 }
