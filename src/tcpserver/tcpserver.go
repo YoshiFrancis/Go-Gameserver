@@ -3,8 +3,6 @@ package tcpserver
 import (
 	"fmt"
 	"net"
-
-	"github.com/yoshifrancis/go-gameserver/src/messages"
 )
 
 type TCPServer struct {
@@ -55,9 +53,9 @@ func (s *TCPServer) Run() {
 			for server := range s.servers {
 				server.Send <- message
 			}
-		case message := <-s.requests:
-			_, args := messages.Decode(message)
-			fmt.Println("Received ", args)
+		// case message := <-s.requests:
+		// 	_, args := messages.Decode(message)
+		// 	fmt.Println("Received ", args)
 		case c := <-s.register:
 			fmt.Println("Server registered!")
 			s.servers[c] = true

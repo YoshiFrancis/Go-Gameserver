@@ -57,7 +57,7 @@ func (l *Leader) Run() {
 			if l.isLeader {
 				message := l.handleArgs(flag, args)
 				fmt.Println(message)
-				l.TCPServer.Broadcast <- []byte(message)
+				// l.TCPServer.Broadcast <- []byte(message)
 			} else {
 				if args[0] == "BROADCAST" {
 					if flag == '-' {
@@ -86,10 +86,6 @@ func (l *Leader) shutdown() {
 	close(l.TCPrequests)
 	close(l.WSrequests)
 }
-
-// func (l *Leader) chooseNewLeader() {
-
-// }
 
 func idGenerator(beginnningId int) func() int {
 	id := beginnningId

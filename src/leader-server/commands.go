@@ -70,6 +70,7 @@ func (l *Leader) handleArgs(flag byte, args []string) (res string) {
 			} else {
 				return
 			}
+			res = messages.HubJoinUser(username, l.hub.hubId)
 			l.hub.register <- l.Users[username]
 		default:
 			fmt.Println("Given invalid hub command")
@@ -91,18 +92,15 @@ func (l *Leader) handleArgs(flag byte, args []string) (res string) {
 			username := args[2]
 			res = messages.LobbyBroadcast(username, l.Users[username].roomId, args[3])
 		case "join":
-			fmt.Println("1")
 			lobby, ok := l.lobbies[lobbyId]
 			if !ok {
 				fmt.Println("given invalid room id")
 				return
 			}
-			fmt.Println("2")
 			username := args[2]
 			userRoomId := l.Users[username].roomId
 			fmt.Println("hub's id:", l.hub.hubId)
 			if userRoomId == l.hub.hubId {
-				fmt.Println("3")
 				l.hub.unregister <- l.Users[username]
 			} else if lobbyId != userRoomId {
 				lobby, ok := l.lobbies[userRoomId]
@@ -112,6 +110,7 @@ func (l *Leader) handleArgs(flag byte, args []string) (res string) {
 			} else {
 				return
 			}
+			res = messages.LobbyJoinUser(username, lobby.lobbyId)
 			lobby.register <- l.Users[username]
 		default:
 			fmt.Println("Given invalid lobby id")
