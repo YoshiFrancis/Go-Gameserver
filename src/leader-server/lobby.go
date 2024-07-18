@@ -31,6 +31,7 @@ func (lobby *Lobby) run() {
 		select {
 		case user := <-lobby.register:
 			lobby.users[user.username] = user
+			user.roomId = lobby.lobbyId
 		case user := <-lobby.unregister:
 			delete(lobby.users, user.username)
 		case msg := <-lobby.broadcast:

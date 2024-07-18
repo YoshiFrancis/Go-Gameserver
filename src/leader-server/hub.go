@@ -31,6 +31,7 @@ func (h *Hub) run() {
 		select {
 		case user := <-h.register:
 			h.users[user.username] = user
+			user.roomId = h.hubId
 		case user := <-h.unregister:
 			delete(h.users, user.username)
 		case msg := <-h.broadcast:
