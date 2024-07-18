@@ -13,7 +13,7 @@ func Decode(req []byte) (flag byte, args []string) {
 	argc := argcByte - '0'
 	args = make([]string, int(argc))
 
-	if flag != '-' && flag != '+' && flag != '*' {
+	if flag != '-' && flag != '+' && flag != '/' {
 		flag = 'x'
 		return
 	}

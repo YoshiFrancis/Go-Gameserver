@@ -13,7 +13,7 @@ func (c *Client) handleCommand(message string) (request_msg string) {
 	split_msg[0] = strings.ToLower(split_msg[0])
 	if split_msg[0] == "echo" {
 		c.echo(message)
-	} else if split_msg[0] == "join" {
+	} else if split_msg[0] == "lobby" {
 		fmt.Println("Websocket: Attempting to join room")
 		roomId, err := strconv.Atoi(split_msg[1])
 		if err != nil {
@@ -21,6 +21,7 @@ func (c *Client) handleCommand(message string) (request_msg string) {
 		}
 		// move user to new room
 		request_msg = messages.LobbyJoinUser(c.username, roomId)
+		fmt.Println(request_msg)
 
 	} else if split_msg[0] == "create" {
 
@@ -32,10 +33,11 @@ func (c *Client) handleCommand(message string) (request_msg string) {
 		fmt.Println("User is trying to get help!")
 	} else if split_msg[0] == "msg" {
 		fmt.Println("User is trying to msg the user: ", split_msg[1])
+	} else if split_msg[0] == "hub" {
+		request_msg = messages.HubJoinUser(c.username, -1)
 	} else {
 		if len(split_msg) == 1 {
 			request_msg = messages.HubBroadcast(c.username, 1, split_msg[0])
-			fmt.Println("Broadcasting to hub", request_msg)
 		}
 	}
 	return

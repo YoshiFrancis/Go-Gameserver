@@ -38,17 +38,17 @@ func NewLeader() *Leader {
 
 func (l *Leader) Run() {
 	defer l.shutdown()
-
+	go l.hub.run()
 	for {
 		select {
 		case req := <-l.WSrequests:
+			fmt.Println("received message from web socket server")
 			if l.isLeader {
 				flag, args := messages.Decode(req)
+				fmt.Println("Arguments:", args)
 				message := l.handleArgs(flag, args)
-				fmt.Println("Received message from WSSS:", string(message))
 				l.TCPServer.Broadcast <- []byte(message)
 			} else {
-				fmt.Println("Received from WSServer", string(req))
 				l.TCPServer.Broadcast <- req // should give to leader
 			}
 		case req := <-l.TCPrequests:

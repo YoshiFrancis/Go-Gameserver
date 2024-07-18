@@ -1,5 +1,7 @@
 package leaderserver
 
+import "fmt"
+
 type Lobby struct {
 	lobbyId      int
 	users        map[string]*User
@@ -32,6 +34,7 @@ func (lobby *Lobby) run() {
 		case user := <-lobby.register:
 			lobby.users[user.username] = user
 			user.roomId = lobby.lobbyId
+			fmt.Println("User has joined lobby with id", lobby.lobbyId)
 		case user := <-lobby.unregister:
 			delete(lobby.users, user.username)
 		case msg := <-lobby.broadcast:
