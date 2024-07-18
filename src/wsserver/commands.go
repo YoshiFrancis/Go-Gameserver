@@ -20,11 +20,12 @@ func (c *Client) handleCommand(message string) (request_msg string) {
 			fmt.Println("Given an invalid room id")
 		}
 		// move user to new room
-		request_msg = messages.RoomJoinUser(c.username, roomId)
+		request_msg = messages.LobbyJoinUser(c.username, roomId)
 
 	} else if split_msg[0] == "create" {
+
 		// roomTitle := split_msg[1]
-		return
+		request_msg = messages.ServerCreateLobby("ws", -1)
 	} else if split_msg[0] == "leave" {
 		request_msg = messages.ServerDisconnectUser(c.username)
 	} else if split_msg[0] == "help" {

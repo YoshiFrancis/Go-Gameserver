@@ -19,7 +19,7 @@ func (l *Leader) handleArgs(flag byte, args []string) (res string) {
 			defer l.mutex.Unlock()
 			l.lobbies[lobby.lobbyId] = lobby
 			go lobby.run()
-		// messages.RoomCreation
+			res = messages.ServerCreateLobby("lobby", lobby.lobbyId)
 		case "shutdown": // shutting server down
 			break
 		case "disc": // disconnecting user
@@ -48,6 +48,18 @@ func (l *Leader) handleArgs(flag byte, args []string) (res string) {
 
 			res = messages.ServerJoinUser(username, serverId)
 			fmt.Println("User joining message:", res)
+		case "lobby":
+			fmt.Println("Creating new lobby!", args)
+			roomId, _ := strconv.Atoi(args[1])
+			l.idGen = idGenerator(roomId)
+			lobby := NewLobby(roomId)
+			l.mutex.Lock()
+			defer l.mutex.Unlock()
+			l.lobbies[lobby.lobbyId] = lobby
+			go lobby.run()
+			if args[2] == "ws" {
+				res = messages.ServerCreateLobby("tcp", lobby.lobbyId)
+			}
 		default:
 			fmt.Println("Given an invalid server command")
 			return
@@ -84,7 +96,7 @@ func (l *Leader) handleArgs(flag byte, args []string) (res string) {
 		switch args[0] {
 		case "broadcast":
 			username := args[2]
-			res = messages.RoomBroadcast(username, l.Users[username].roomId, args[3])
+			res = messages.LobbyBroadcast(username, l.Users[username].roomId, args[3])
 		default:
 			fmt.Println("Given invalid lobby id")
 		}

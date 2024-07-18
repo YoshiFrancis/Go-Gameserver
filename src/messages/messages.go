@@ -75,7 +75,8 @@ func readSize(r *bytes.Reader) (int, bool) {
 }
 
 // - -> for server
-// + -> for rooms
+// + -> for Hub
+// / -> for rooms
 // * -> for individual clients
 // _ -> for groups (if implemented in the future)
 // flag \r\n n arguments \r\n arg[0] \r\n arg[1] ... \r\n arg[n-1] \r\n\r\n
@@ -113,13 +114,6 @@ func ServerJoinUser(username string, serverId int) string {
 	return message
 }
 
-func RoomJoinUser(username string, roomId int) string {
-	roomIdStr := strconv.Itoa(roomId)
-	roomIdLength := len(roomIdStr)
-	message := fmt.Sprintf("+3\r\n4\r\nJOIN\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", roomIdLength, roomIdStr, len(username), username)
-	return message
-}
-
 func HubBroadcast(username string, roomId int, broadcast string) string {
 	roomIdStr := strconv.Itoa(roomId)
 	roomIdLength := len(roomIdStr)
@@ -127,10 +121,31 @@ func HubBroadcast(username string, roomId int, broadcast string) string {
 	return message
 }
 
-func RoomBroadcast(username string, roomId int, broadcast string) string {
+func HubJoinUser(username string, roomId int) string {
+	roomIdStr := strconv.Itoa(roomId)
+	roomIdLength := len(roomIdStr)
+	message := fmt.Sprintf("+3\r\n4\r\nJOIN\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", roomIdLength, roomIdStr, len(username), username)
+	return message
+}
+
+func LobbyJoinUser(username string, roomId int) string {
+	roomIdStr := strconv.Itoa(roomId)
+	roomIdLength := len(roomIdStr)
+	message := fmt.Sprintf("/3\r\n4\r\nJOIN\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", roomIdLength, roomIdStr, len(username), username)
+	return message
+}
+
+func LobbyBroadcast(username string, roomId int, broadcast string) string {
 	roomIdStr := strconv.Itoa(roomId)
 	roomIdLength := len(roomIdStr)
 	message := fmt.Sprintf("/4\r\n9\r\nBROADCAST\r\n%d\r\n%s\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", roomIdLength, roomIdStr, len(username), username, len(broadcast), broadcast)
+	return message
+}
+
+func ServerCreateLobby(lobbyTitle string, roomId int) string {
+	roomIdStr := strconv.Itoa(roomId)
+	roomIdLength := len(roomIdStr)
+	message := fmt.Sprintf("-3\r\n5\r\nLOBBY\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", roomIdLength, roomIdStr, len(lobbyTitle), lobbyTitle)
 	return message
 }
 
