@@ -6,6 +6,13 @@ import (
 	"strconv"
 )
 
+/*
+MESSAGE STILL NEED:
+merge user
+merge server
+tell user to join a specific url
+*/
+
 func Decode(req []byte) (flag byte, args []string) {
 	r := bytes.NewReader(req)
 	flag, _ = r.ReadByte() // reading the flag. lowkey dont know what to do with it right now

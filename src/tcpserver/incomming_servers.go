@@ -11,6 +11,7 @@ type ExtenalTCPServer struct {
 	Send        chan []byte
 	Shutdown    chan bool
 	Url         string
+	serverId    int
 }
 
 func NewExternalTCPServer(main_server *TCPServer, conn net.Conn, url string) *ExtenalTCPServer {

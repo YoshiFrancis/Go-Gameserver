@@ -6,5 +6,5 @@
 
 CURRENT
 Wednesday - DO ALL LEADER IMPLEMENTATION (the rleader receiving / handlign requests then broadcasting)
-          - this includes all the room functionality and such
+          - this includes all the room functionality and such --  DONE
 Thursday - Configure a clean joining of two servers together

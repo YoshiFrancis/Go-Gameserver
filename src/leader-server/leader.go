@@ -80,13 +80,6 @@ func (l *Leader) Run() {
 	}
 }
 
-func (l *Leader) shutdown() {
-	l.WSServer.Shutdown()
-	l.TCPServer.Shutdown()
-	close(l.TCPrequests)
-	close(l.WSrequests)
-}
-
 func idGenerator(beginnningId int) func() int {
 	id := beginnningId
 	return func() int {

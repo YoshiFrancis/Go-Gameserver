@@ -6,7 +6,7 @@ import (
 )
 
 type TCPServer struct {
-	servers    map[*ExtenalTCPServer]bool
+	Servers    map[int]*ExtenalTCPServer
 	Broadcast  chan []byte
 	requests   chan []byte
 	register   chan *ExtenalTCPServer
@@ -16,7 +16,7 @@ type TCPServer struct {
 
 func NewTCPServer(requests chan []byte) *TCPServer {
 	return &TCPServer{
-		servers:    make(map[*ExtenalTCPServer]bool),
+		Servers:    make(map[int]*ExtenalTCPServer),
 		Broadcast:  make(chan []byte, 1024),
 		requests:   requests,
 		register:   make(chan *ExtenalTCPServer, 10),
@@ -40,8 +40,7 @@ func (s *TCPServer) Listen(url string) {
 			fmt.Println("Error accepting new connection!")
 			continue
 		}
-
-		s.register <- NewExternalTCPServer(s, conn, url)
+		s.register <- NewExternalTCPServer(s, conn, conn.LocalAddr().String())
 	}
 }
 
@@ -50,7 +49,7 @@ func (s *TCPServer) Run() {
 	for {
 		select {
 		case message := <-s.Broadcast:
-			for server := range s.servers {
+			for _, server := range s.Servers {
 				server.Send <- message
 			}
 		// case message := <-s.requests:
@@ -58,10 +57,10 @@ func (s *TCPServer) Run() {
 		// 	fmt.Println("Received ", args)
 		case c := <-s.register:
 			fmt.Println("Server registered!")
-			s.servers[c] = true
+			s.Servers[c.serverId] = c
 			go c.run()
 		case c := <-s.unregister:
-			delete(s.servers, c)
+			delete(s.Servers, c.serverId)
 			fmt.Println("Server unregistered")
 		}
 	}
