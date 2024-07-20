@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
 	"sync"
 	"syscall"
 
@@ -83,4 +84,24 @@ func (l *Leader) disconnectUser(username string) {
 		}
 	}
 	delete(l.Users, username)
+}
+
+func (l *Leader) sendAllData(newServerId int) {
+	// send users
+	// send hub -> [hubId]
+	// send lobby -> [[lobbyId]]
+	// user -> [username, serverId, roomId]
+	hubId := l.hub.hubId
+	lobbyIds := make([]int, 0)
+	for lobbyId := range l.lobbies {
+		lobbyIds = append(lobbyIds, lobbyId)
+	}
+	users := make([][]string, 0)
+	for _, user := range l.Users {
+		users = append(users, []string{user.username, strconv.Itoa(user.serverId), strconv.Itoa(user.roomId)})
+	}
+	starting_int := l.idGen()
+	msg := messages.ServerMergeData(hubId, lobbyIds, users)
+	l.TCPServer.Servers[newServerId].Send <- []byte(msg)
+
 }

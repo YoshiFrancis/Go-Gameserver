@@ -116,6 +116,37 @@ func ServerTellServerId(serverId int) string {
 	return message
 }
 
+func ServerMergeData(hubId int, lobbyIds []int, userData [][]string, idGenStartingInt int) string {
+	hubIdStr := strconv.Itoa(hubId)
+	hubIdLength := len(hubIdStr)
+	var lobbyIdsString string
+	for lobbyId := range lobbyIds {
+		lobbyIdStr := strconv.Itoa(lobbyId)
+		lobbyIdStrLength := len(lobbyIdStr)
+		new_lobby := fmt.Sprintf("%d\r\n%s\r\n", lobbyIdStrLength, lobbyIdStr)
+		lobbyIdsString += new_lobby
+	}
+	lobbyIdsStringLength := len(lobbyIdsString)
+
+	var userDataStr string
+	for _, user := range userData {
+		username := user[0]
+		serverId := user[1]
+		roomId := user[2]
+		new_user := fmt.Sprintf("%d\r\n%s\r\n%d\r\n%s\r\n%d\r\n%s\r\n", len(username), username, len(serverId), serverId, len(roomId), roomId)
+		userDataStr += new_user
+	}
+	userDataStrLength := len(userDataStr)
+
+	idGenStr := strconv.Itoa(idGenStartingInt)
+	idGenStrLength := len(idGenStr)
+
+	total_args := 1 + 1 + len(lobbyIds) + len(userData) + 1 // the command, hub Id, total lobbies, total users, id gen starting int
+	message := fmt.Sprintf("-%d\r\n5\r\nMERGE\r\n%d\r\n%s\r\n%d\r\n%s%d\r\n%s\r\n%d\r\n%s\r\n\r\n", total_args, hubIdLength, hubIdStr, lobbyIdsStringLength, lobbyIdsString, userDataStrLength, userDataStr, idGenStrLength, idGenStr)
+	return message
+
+}
+
 func ServerDisconnectUser(username string) string {
 	message := fmt.Sprintf("-2\r\n4\r\nDISC\r\n%d\r\n%s\r\n\r\n", len(username), username)
 	return message

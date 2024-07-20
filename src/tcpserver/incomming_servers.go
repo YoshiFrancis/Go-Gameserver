@@ -77,7 +77,7 @@ func (s *ExtenalTCPServer) read() {
 				s.main_server.AcceptConnectedServer(serverId, url)
 			case "shutdown":
 				s.main_server.unregister <- s
-			case "creation":
+
 				// the server that was originally connected now must broadcast to all other servers rhat there is a neew server
 				// i have to come up with new key word to signal that the new server has already been accepted by one of the nodes in the group already
 				// the new servers will connect with the already connected node
