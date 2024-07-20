@@ -2,9 +2,11 @@ package leaderserver
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 
@@ -14,28 +16,30 @@ import (
 )
 
 type Leader struct {
-	WSServer    *wsserver.WSServer   // access to websocket server
-	TCPServer   *tcpserver.TCPServer // access to tcp server
-	WSrequests  chan []byte          // channel of incoming requests from websocket server
-	TCPrequests chan []byte          // channel of incoming requests from tcp server
-	isLeader    bool                 // indicate if leader or not
-	idGen       func() int           // used to generate ids, get function from a closure
-	hub         *Hub                 // room title, room id
-	lobbies     map[int]*Lobby       // lobby id, Lobby pointer
-	Users       map[string]*User     // username, user pointer
-	mutex       sync.Mutex
+	WSServer       *wsserver.WSServer   // access to websocket server
+	TCPServer      *tcpserver.TCPServer // access to tcp server
+	WSrequests     chan []byte          // channel of incoming requests from websocket server
+	TCPrequests    chan []byte          // channel of incoming requests from tcp server
+	NewConnections chan net.Conn        // channel of new connections to merge with
+	isLeader       bool                 // indicate if leader or not
+	idGen          func() int           // used to generate ids, get function from a closure
+	hub            *Hub                 // room title, room id
+	lobbies        map[int]*Lobby       // lobby id, Lobby pointer
+	Users          map[string]*User     // username, user pointer
+	mutex          sync.Mutex
 }
 
 func NewLeader() *Leader {
 	return &Leader{
-		Users:       make(map[string]*User),
-		hub:         NewHub(0),
-		lobbies:     make(map[int]*Lobby),
-		WSrequests:  make(chan []byte, 1024),
-		TCPrequests: make(chan []byte, 1024),
-		idGen:       idGenerator(0),
-		isLeader:    true,
-		mutex:       sync.Mutex{},
+		Users:          make(map[string]*User),
+		hub:            NewHub(0),
+		lobbies:        make(map[int]*Lobby),
+		WSrequests:     make(chan []byte, 1024),
+		TCPrequests:    make(chan []byte, 1024),
+		NewConnections: make(chan net.Conn, 10),
+		idGen:          idGenerator(0),
+		isLeader:       true,
+		mutex:          sync.Mutex{},
 	}
 }
 
@@ -86,7 +90,7 @@ func (l *Leader) disconnectUser(username string) {
 	delete(l.Users, username)
 }
 
-func (l *Leader) sendAllData(newServerId int) {
+func (l *Leader) sendAllData(conn net.Conn) {
 	// send users
 	// send hub -> [hubId]
 	// send lobby -> [[lobbyId]]
@@ -101,7 +105,39 @@ func (l *Leader) sendAllData(newServerId int) {
 		users = append(users, []string{user.username, strconv.Itoa(user.serverId), strconv.Itoa(user.roomId)})
 	}
 	starting_int := l.idGen()
-	msg := messages.ServerMergeData(hubId, lobbyIds, users)
-	l.TCPServer.Servers[newServerId].Send <- []byte(msg)
+	msg := messages.ServerMergeData(hubId, lobbyIds, users, starting_int)
+	conn.Write([]byte(msg))
 
+}
+
+func (s *Leader) ConnectToServer(url string) bool {
+	tcp := s.TCPServer
+	conn, err := net.Dial("tcp", url)
+	if err != nil {
+		fmt.Println("Error connecting to server")
+		return false
+	}
+	s.sendAllData(conn)
+	var serverId int
+	for {
+		buffer := make([]byte, 1024)
+		_, err := conn.Read(buffer)
+		if err != nil {
+			fmt.Println("Erorr while reading", err.Error())
+			return false
+		}
+		_, args := messages.Decode(buffer)
+		serverId, err = strconv.Atoi(args[1])
+		if err != nil {
+			fmt.Println("given invalid serverid")
+			return false
+		}
+		if strings.ToLower(args[0]) == "merge" {
+			s.TCPrequests <- buffer
+			break
+		}
+	}
+
+	tcp.Register <- tcpserver.NewExternalTCPServer(tcp, conn, url, serverId)
+	return true
 }

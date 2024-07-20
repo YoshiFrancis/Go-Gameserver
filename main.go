@@ -26,7 +26,7 @@ func main() {
 	leader := leaderserver.NewLeader()
 
 	wsserver := wsserver.NewWSServer(leader.WSrequests)
-	tcpserver := tcpserver.NewTCPServer(leader.TCPrequests)
+	tcpserver := tcpserver.NewTCPServer(leader.TCPrequests, leader.NewConnections)
 	leader.WSServer = wsserver
 	leader.TCPServer = tcpserver
 	go leader.Run()
@@ -37,12 +37,12 @@ func main() {
 		wsserver.Serve(w, r)
 	})
 
-	go input(tcpserver)
+	go input(leader)
 	go tcpserver.Listen(tcpPort)
 	log.Fatal(http.ListenAndServe(wsPort, nil))
 }
 
-func input(tcpserver *tcpserver.TCPServer) {
+func input(leader *leaderserver.Leader) {
 	reader := bufio.NewReader(os.Stdin)
 	for {
 		text, _ := reader.ReadBytes('\n')
@@ -51,7 +51,7 @@ func input(tcpserver *tcpserver.TCPServer) {
 		if text_string[0] == '/' {
 			fmt.Println("Attempting to connect to ", text_string[:1])
 			go func() {
-				connected := tcpserver.ConnectToServer(text_string[1:])
+				connected := leader.ConnectToServer(text_string[1:])
 				if connected {
 					fmt.Println("Successfully connected to server: ", text_string[1:])
 				} else {
@@ -60,7 +60,7 @@ func input(tcpserver *tcpserver.TCPServer) {
 			}()
 		} else if text_string[0] == '\\' {
 			msg := messages.HubBroadcast("server", 1, text_string[1:])
-			tcpserver.Broadcast <- []byte(msg)
+			leader.TCPServer.Broadcast <- []byte(msg)
 		} else {
 			fmt.Println("Invalid command")
 		}

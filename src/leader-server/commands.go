@@ -13,6 +13,13 @@ func (l *Leader) handleArgs(flag byte, args []string) (res string) { // response
 	res = ""
 	if flag == '-' { // server
 		switch args[0] {
+		case "merge":
+			// parse data
+			// send to connections waiting
+			for range len(l.NewConnections) {
+				new_conn := <-l.NewConnections
+				l.sendAllData(new_conn)
+			}
 		case "disc": // disconnecting user
 			username := args[1]
 			l.disconnectUser(username)
