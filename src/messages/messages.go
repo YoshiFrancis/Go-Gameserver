@@ -88,10 +88,10 @@ func readSize(r *bytes.Reader) (int, bool) {
 // _ -> for groups (if implemented in the future)
 // flag \r\n n arguments \r\n arg[0] \r\n arg[1] ... \r\n arg[n-1] \r\n\r\n
 
-func ServerAcceptServer(serverId int) string {
+func ServerAcceptServer(serverId int, url string) string {
 	serverIdStr := strconv.Itoa(serverId)
 	serverIdLength := len(serverIdStr)
-	message := fmt.Sprintf("-2\r\n6\r\nACCEPT\r\n%d\r\n%s\r\n\r\n", serverIdLength, serverIdStr)
+	message := fmt.Sprintf("-2\r\n6\r\nACCEPT\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", serverIdLength, serverIdStr, len(url), url)
 	return message
 }
 
@@ -106,6 +106,13 @@ func ServerShutdown(serverId int) string {
 	serverIdStr := strconv.Itoa(serverId)
 	serverIdLength := len(serverIdStr)
 	message := fmt.Sprintf("-2\r\n8\r\nSHUTDOWN\r\n%d\r\n%s\r\n\r\n", serverIdLength, serverIdStr)
+	return message
+}
+
+func ServerTellServerId(serverId int) string {
+	serverIdStr := strconv.Itoa(serverId)
+	serverIdLength := len(serverIdStr)
+	message := fmt.Sprintf("-2\r\n8\r\nSERVERID\r\n%d\r\n%s\r\n\r\n", serverIdLength, serverIdStr)
 	return message
 }
 

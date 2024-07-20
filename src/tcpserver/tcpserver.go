@@ -110,6 +110,20 @@ func (s *TCPServer) ConnectToServer(url string) bool {
 	return true
 }
 
+func (s *TCPServer) AcceptConnectedServer(serverId int, url string) bool {
+	conn, err := net.Dial("tcp", url)
+	if err != nil {
+		fmt.Println("Error connecting to server")
+		return false
+	}
+
+	s.Register <- NewExternalTCPServer(s, conn, url, serverId)
+	s.idGen = idGeneratorInit(serverId)
+	msg := messages.ServerTellServerId(serverId)
+	conn.Write([]byte(msg))
+	return true
+}
+
 func idGeneratorInit(start int) func() int {
 	i := start
 	return func() int {

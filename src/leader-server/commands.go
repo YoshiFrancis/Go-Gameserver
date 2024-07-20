@@ -18,6 +18,7 @@ func (l *Leader) handleArgs(flag byte, args []string) (res string) {
 			// i have to come up with new key word to signal that the new server has already been accepted by one of the nodes in the group already
 			// the new servers will connect with the already connected node
 			// this original node that accepted has the send all data about the servers to tje new node
+		case "serverid":
 		case "shutdown": // shutting server down
 			break
 		case "disc": // disconnecting user

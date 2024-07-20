@@ -3,6 +3,9 @@ package tcpserver
 import (
 	"fmt"
 	"net"
+	"strconv"
+
+	"github.com/yoshifrancis/go-gameserver/src/messages"
 )
 
 type ExtenalTCPServer struct {
@@ -52,7 +55,27 @@ func (s *ExtenalTCPServer) read() {
 			return
 		}
 		fmt.Println("External tcp server received message")
-		s.main_server.requests <- buffer
+		flag, msg := messages.Decode(buffer)
+		if flag == '-' {
+			if msg[0] == "serverid" {
+				serverId, err := strconv.Atoi(msg[1])
+				if err != nil {
+					fmt.Println("given invalid server id")
+					continue
+				}
+				s.serverId = serverId
+			} else if msg[0] == "accept" {
+				serverId, err := strconv.Atoi(msg[1])
+				if err != nil {
+					fmt.Println("given invalid server id")
+					continue
+				}
+				url := msg[2]
+				s.main_server.AcceptConnectedServer(serverId, url)
+			}
+		} else {
+			s.main_server.requests <- buffer
+		}
 	}
 }
 
