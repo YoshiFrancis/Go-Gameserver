@@ -131,3 +131,7 @@ func idGeneratorInit(start int) func() int {
 		return i
 	}
 }
+
+func (s *TCPServer) ServerId() int {
+	return s.serverId
+}

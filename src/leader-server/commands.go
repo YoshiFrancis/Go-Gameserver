@@ -8,7 +8,7 @@ import (
 	"github.com/yoshifrancis/go-gameserver/src/messages"
 )
 
-func (l *Leader) handleArgs(flag byte, args []string) (res string) {
+func (l *Leader) handleArgs(flag byte, args []string) (res string) { // response is only used if the message is from the websocket server
 	args[0] = strings.ToLower(args[0])
 	res = ""
 	if flag == '-' { // server
@@ -24,32 +24,38 @@ func (l *Leader) handleArgs(flag byte, args []string) (res string) {
 			if err != nil {
 				fmt.Println("given invalid serverid")
 			}
+
+			l.mutex.Lock()
+			defer l.mutex.Unlock()
+
 			user := NewUser(username, serverId, l.hub.hubId, l.WSServer.Clients[username])
 			l.Users[username] = user
 			l.hub.register <- user
 			res = messages.ServerJoinUser(username, serverId)
-			fmt.Println("User joining message:", res)
 		default:
 			fmt.Println("Given an invalid server command")
 			return
 		}
 	} else if flag == '+' { // hub
-		fmt.Println(args)
 		switch args[0] {
 		case "broadcast":
 			res = messages.HubBroadcast(args[2], l.hub.hubId, args[3])
+			username := args[1]
+			broadcast_msg := args[3]
+			if l.Users[username].serverId != l.TCPServer.ServerId() {
+				l.hub.broadcast <- []byte(broadcast_msg)
+			}
 		case "join":
 			username := args[2]
 			userRoomId := l.Users[username].roomId
 			if userRoomId != l.hub.hubId {
 				l.lobbies[userRoomId].unregister <- l.Users[username]
-			} else {
-				return
+				res = messages.HubJoinUser(username, l.hub.hubId)
+				l.hub.register <- l.Users[username]
 			}
-			res = messages.HubJoinUser(username, l.hub.hubId)
-			l.hub.register <- l.Users[username]
 		case "lobby":
-			fmt.Println("Creating new lobby!", args)
+			l.mutex.Lock()
+			defer l.mutex.Unlock()
 			roomId, _ := strconv.Atoi(args[1])
 			if args[2] == "ws" {
 				roomId = l.idGen()
@@ -58,16 +64,16 @@ func (l *Leader) handleArgs(flag byte, args []string) (res string) {
 				l.idGen = idGenerator(roomId)
 			}
 			lobby := NewLobby(roomId)
-			l.mutex.Lock()
-			defer l.mutex.Unlock()
 			l.lobbies[lobby.lobbyId] = lobby
 			go lobby.run()
-			fmt.Println(lobby.lobbyId)
+			fmt.Println("New lobby id:", lobby.lobbyId)
 		default:
 			fmt.Println("Given invalid hub command")
 			return
 		}
 	} else if flag == '/' { // lobby
+		l.mutex.Lock()
+		defer l.mutex.Unlock()
 		lobbyId, err := strconv.Atoi(args[1])
 		if err != nil {
 			fmt.Println("given an invalid room id")
@@ -81,6 +87,8 @@ func (l *Leader) handleArgs(flag byte, args []string) (res string) {
 		switch args[0] {
 		case "broadcast":
 			username := args[2]
+			broadcast_msg := args[3]
+			l.lobbies[lobbyId].broadcast <- []byte(username + broadcast_msg) // need a better api for this
 			res = messages.LobbyBroadcast(username, l.Users[username].roomId, args[3])
 		case "join":
 			lobby, ok := l.lobbies[lobbyId]
@@ -90,7 +98,6 @@ func (l *Leader) handleArgs(flag byte, args []string) (res string) {
 			}
 			username := args[2]
 			userRoomId := l.Users[username].roomId
-			fmt.Println("hub's id:", l.hub.hubId)
 			if userRoomId == l.hub.hubId {
 				l.hub.unregister <- l.Users[username]
 			} else if lobbyId != userRoomId {
