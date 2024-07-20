@@ -2,8 +2,11 @@ package leaderserver
 
 import (
 	"fmt"
+	"os"
+	"os/signal"
 	"strconv"
 	"sync"
+	"syscall"
 
 	"github.com/yoshifrancis/go-gameserver/src/messages"
 	"github.com/yoshifrancis/go-gameserver/src/tcpserver"
@@ -37,8 +40,11 @@ func NewLeader() *Leader {
 }
 
 func (l *Leader) Run() {
+	fmt.Println("leader is running")
 	defer l.shutdown()
 	go l.hub.run()
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 	for {
 		select {
 		case req := <-l.WSrequests:
@@ -74,8 +80,10 @@ func (l *Leader) Run() {
 					}
 				}
 			}
-
 			fmt.Println("Received msg from tcp server: ", string(req))
+		case sig := <-sigCh:
+			fmt.Println("Received signal: ", sig)
+			return
 		}
 	}
 }

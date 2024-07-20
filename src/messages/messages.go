@@ -149,10 +149,10 @@ func LobbyBroadcast(username string, roomId int, broadcast string) string {
 	return message
 }
 
-func ServerCreateLobby(lobbyTitle string, roomId int) string {
+func HubCreateLobby(lobbyTitle string, roomId int) string {
 	roomIdStr := strconv.Itoa(roomId)
 	roomIdLength := len(roomIdStr)
-	message := fmt.Sprintf("-3\r\n5\r\nLOBBY\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", roomIdLength, roomIdStr, len(lobbyTitle), lobbyTitle)
+	message := fmt.Sprintf("+3\r\n5\r\nLOBBY\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", roomIdLength, roomIdStr, len(lobbyTitle), lobbyTitle)
 	return message
 }
 

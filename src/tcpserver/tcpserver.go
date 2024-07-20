@@ -3,15 +3,20 @@ package tcpserver
 import (
 	"fmt"
 	"net"
+	"strconv"
+	"strings"
+
+	"github.com/yoshifrancis/go-gameserver/src/messages"
 )
 
 type TCPServer struct {
 	Servers    map[int]*ExtenalTCPServer
 	Broadcast  chan []byte
 	requests   chan []byte
-	register   chan *ExtenalTCPServer
+	Register   chan *ExtenalTCPServer
 	unregister chan *ExtenalTCPServer
 	serverId   int
+	idGen      func() int
 }
 
 func NewTCPServer(requests chan []byte) *TCPServer {
@@ -19,9 +24,10 @@ func NewTCPServer(requests chan []byte) *TCPServer {
 		Servers:    make(map[int]*ExtenalTCPServer),
 		Broadcast:  make(chan []byte, 1024),
 		requests:   requests,
-		register:   make(chan *ExtenalTCPServer, 10),
+		Register:   make(chan *ExtenalTCPServer, 10),
 		unregister: make(chan *ExtenalTCPServer, 10),
-		serverId:   -1,
+		serverId:   0,
+		idGen:      idGeneratorInit(1),
 	}
 }
 
@@ -40,12 +46,13 @@ func (s *TCPServer) Listen(url string) {
 			fmt.Println("Error accepting new connection!")
 			continue
 		}
-		s.register <- NewExternalTCPServer(s, conn, conn.LocalAddr().String())
+
+		fmt.Println("Connection from ", conn.LocalAddr().String())
+		s.Register <- NewExternalTCPServer(s, conn, conn.LocalAddr().String(), s.idGen())
 	}
 }
 
 func (s *TCPServer) Run() {
-	defer s.Shutdown()
 	for {
 		select {
 		case message := <-s.Broadcast:
@@ -55,10 +62,11 @@ func (s *TCPServer) Run() {
 		// case message := <-s.requests:
 		// 	_, args := messages.Decode(message)
 		// 	fmt.Println("Received ", args)
-		case c := <-s.register:
+		case c := <-s.Register:
 			fmt.Println("Server registered!")
 			s.Servers[c.serverId] = c
 			go c.run()
+			s.Broadcast <- []byte(messages.ServerCreation(c.serverId))
 		case c := <-s.unregister:
 			delete(s.Servers, c.serverId)
 			fmt.Println("Server unregistered")
@@ -67,9 +75,10 @@ func (s *TCPServer) Run() {
 }
 
 func (s *TCPServer) Shutdown() {
+	fmt.Println("tcpserver shutting down")
 	close(s.Broadcast)
 	close(s.requests)
-	close(s.register)
+	close(s.Register)
 	close(s.unregister)
 }
 
@@ -79,6 +88,35 @@ func (s *TCPServer) ConnectToServer(url string) bool {
 		fmt.Println("Error connecting to server")
 		return false
 	}
-	s.register <- NewExternalTCPServer(s, conn, url)
+
+	var serverId int
+	for {
+		buffer := make([]byte, 1024)
+		_, err := conn.Read(buffer)
+		if err != nil {
+			fmt.Println("Erorr while reading", err.Error())
+			return false
+		}
+		_, args := messages.Decode(buffer)
+		serverId, err = strconv.Atoi(args[1])
+		if err != nil {
+			fmt.Println("given invalid serverid")
+			return false
+		}
+		if strings.ToLower(args[0]) == "creation" {
+			break
+		}
+	}
+
+	s.Register <- NewExternalTCPServer(s, conn, url, serverId)
+	s.idGen = idGeneratorInit(serverId)
 	return true
+}
+
+func idGeneratorInit(start int) func() int {
+	i := start
+	return func() int {
+		i++
+		return i
+	}
 }

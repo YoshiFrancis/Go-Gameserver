@@ -13,13 +13,6 @@ func (l *Leader) handleArgs(flag byte, args []string) (res string) {
 	res = ""
 	if flag == '-' { // server
 		switch args[0] {
-		case "create": // creating server
-			lobby := NewLobby(l.idGen())
-			l.mutex.Lock()
-			defer l.mutex.Unlock()
-			l.lobbies[lobby.lobbyId] = lobby
-			go lobby.run()
-			res = messages.ServerCreateLobby("lobby", lobby.lobbyId)
 		case "shutdown": // shutting server down
 			break
 		case "disc": // disconnecting user
@@ -38,21 +31,6 @@ func (l *Leader) handleArgs(flag byte, args []string) (res string) {
 			l.hub.register <- user
 			res = messages.ServerJoinUser(username, serverId)
 			fmt.Println("User joining message:", res)
-		case "lobby":
-			fmt.Println("Creating new lobby!", args)
-			roomId, _ := strconv.Atoi(args[1])
-			if args[2] == "ws" {
-				roomId = l.idGen()
-				res = messages.ServerCreateLobby("tcp", roomId)
-			} else {
-				l.idGen = idGenerator(roomId)
-			}
-			lobby := NewLobby(roomId)
-			l.mutex.Lock()
-			defer l.mutex.Unlock()
-			l.lobbies[lobby.lobbyId] = lobby
-			go lobby.run()
-			fmt.Println(lobby.lobbyId)
 		default:
 			fmt.Println("Given an invalid server command")
 			return
@@ -72,6 +50,21 @@ func (l *Leader) handleArgs(flag byte, args []string) (res string) {
 			}
 			res = messages.HubJoinUser(username, l.hub.hubId)
 			l.hub.register <- l.Users[username]
+		case "lobby":
+			fmt.Println("Creating new lobby!", args)
+			roomId, _ := strconv.Atoi(args[1])
+			if args[2] == "ws" {
+				roomId = l.idGen()
+				res = messages.HubCreateLobby("tcp", roomId)
+			} else {
+				l.idGen = idGenerator(roomId)
+			}
+			lobby := NewLobby(roomId)
+			l.mutex.Lock()
+			defer l.mutex.Unlock()
+			l.lobbies[lobby.lobbyId] = lobby
+			go lobby.run()
+			fmt.Println(lobby.lobbyId)
 		default:
 			fmt.Println("Given invalid hub command")
 			return

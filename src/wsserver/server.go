@@ -43,7 +43,6 @@ func NewWSServer(requests chan []byte) *WSServer {
 }
 
 func (ws *WSServer) Run() {
-	defer ws.Shutdown()
 	for {
 		select {
 		case msg := <-ws.broadcast:
@@ -53,14 +52,15 @@ func (ws *WSServer) Run() {
 		case client := <-ws.leaving:
 			close(ws.Clients[client].Send)
 			delete(ws.Clients, client)
-			// signal Leader if have one
 		}
 	}
 }
 
 func (ws *WSServer) Shutdown() {
+	fmt.Println("wsserver shutting down")
 	close(ws.broadcast)
 	close(ws.leaving)
+	close(ws.register)
 }
 
 func (ws *WSServer) Serve(w http.ResponseWriter, r *http.Request) {

@@ -14,13 +14,14 @@ type ExtenalTCPServer struct {
 	serverId    int
 }
 
-func NewExternalTCPServer(main_server *TCPServer, conn net.Conn, url string) *ExtenalTCPServer {
+func NewExternalTCPServer(main_server *TCPServer, conn net.Conn, url string, serverId int) *ExtenalTCPServer {
 	return &ExtenalTCPServer{
 		main_server: main_server,
 		conn:        conn,
 		Send:        make(chan []byte, 1024),
 		Shutdown:    make(chan bool, 1),
 		Url:         url,
+		serverId:    serverId,
 	}
 }
 

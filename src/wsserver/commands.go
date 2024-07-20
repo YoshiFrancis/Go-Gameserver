@@ -26,7 +26,7 @@ func (c *Client) handleCommand(message string) (request_msg string) {
 	} else if split_msg[0] == "create" {
 
 		// roomTitle := split_msg[1]
-		request_msg = messages.ServerCreateLobby("ws", -1)
+		request_msg = messages.HubCreateLobby("ws", -1)
 	} else if split_msg[0] == "leave" {
 		request_msg = messages.ServerDisconnectUser(c.username)
 	} else if split_msg[0] == "help" {
