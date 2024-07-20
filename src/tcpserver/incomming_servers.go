@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"strconv"
+	"strings"
 
 	"github.com/yoshifrancis/go-gameserver/src/messages"
 )
@@ -55,23 +56,33 @@ func (s *ExtenalTCPServer) read() {
 			return
 		}
 		fmt.Println("External tcp server received message")
-		flag, msg := messages.Decode(buffer)
+		flag, args := messages.Decode(buffer)
+		args[0] = strings.ToLower(args[0])
 		if flag == '-' {
-			if msg[0] == "serverid" {
-				serverId, err := strconv.Atoi(msg[1])
+			switch args[0] {
+			case "serverid":
+				serverId, err := strconv.Atoi(args[1])
 				if err != nil {
 					fmt.Println("given invalid server id")
 					continue
 				}
 				s.serverId = serverId
-			} else if msg[0] == "accept" {
-				serverId, err := strconv.Atoi(msg[1])
+			case "accept":
+				serverId, err := strconv.Atoi(args[1])
 				if err != nil {
 					fmt.Println("given invalid server id")
 					continue
 				}
-				url := msg[2]
+				url := args[2]
 				s.main_server.AcceptConnectedServer(serverId, url)
+			case "shutdown":
+				s.main_server.unregister <- s
+			case "creation":
+				// the server that was originally connected now must broadcast to all other servers rhat there is a neew server
+				// i have to come up with new key word to signal that the new server has already been accepted by one of the nodes in the group already
+				// the new servers will connect with the already connected node
+				// this original node that accepted has the send all data about the servers to tje new node
+
 			}
 		} else {
 			s.main_server.requests <- buffer

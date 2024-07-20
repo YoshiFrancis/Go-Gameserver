@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"strconv"
 	"sync"
 	"syscall"
 
@@ -49,38 +48,12 @@ func (l *Leader) Run() {
 		select {
 		case req := <-l.WSrequests:
 			fmt.Println("received message from web socket server")
-			if l.isLeader {
-				flag, args := messages.Decode(req)
-				fmt.Println("Arguments:", args)
-				message := l.handleArgs(flag, args)
-				l.TCPServer.Broadcast <- []byte(message)
-			} else {
-				l.TCPServer.Broadcast <- req // should give to leader
-			}
+			broadcast_message := l.handleArgs(messages.Decode(req))
+			l.TCPServer.Broadcast <- []byte(broadcast_message)
 		case req := <-l.TCPrequests:
 			fmt.Println("Received message from tcp server")
 			flag, args := messages.Decode(req)
-			if l.isLeader {
-				message := l.handleArgs(flag, args)
-				fmt.Println(message)
-				// l.TCPServer.Broadcast <- []byte(message)
-			} else {
-				if args[0] == "BROADCAST" {
-					if flag == '-' {
-						if hubId, _ := strconv.Atoi(args[1]); hubId != l.hub.hubId {
-							fmt.Println("Given invalid hub id!")
-							continue
-						}
-						l.hub.broadcast <- []byte(args[2])
-					} else if flag == '+' {
-						lobbyId, _ := strconv.Atoi(args[1])
-						if lobby, ok := l.lobbies[lobbyId]; ok {
-							lobby.broadcast <- []byte(args[2])
-						}
-					}
-				}
-			}
-			fmt.Println("Received msg from tcp server: ", string(req))
+			l.handleArgs(flag, args)
 		case sig := <-sigCh:
 			fmt.Println("Received signal: ", sig)
 			return
@@ -97,6 +70,8 @@ func idGenerator(beginnningId int) func() int {
 }
 
 func (l *Leader) disconnectUser(username string) {
+	l.mutex.Lock()
+	defer l.mutex.Unlock()
 	user := l.Users[username]
 	roomId := user.roomId
 	if roomId == l.hub.hubId {
@@ -107,6 +82,5 @@ func (l *Leader) disconnectUser(username string) {
 			lobby.unregister <- user
 		}
 	}
-
 	delete(l.Users, username)
 }
