@@ -95,10 +95,10 @@ func ServerAcceptServer(serverId int) string {
 	return message
 }
 
-func ServerCreation(serverId int) string {
+func ServerCreation(serverId int, url string) string {
 	serverIdStr := strconv.Itoa(serverId)
 	serverIdLength := len(serverIdStr)
-	message := fmt.Sprintf("-2\r\n8\r\nCREATION\r\n%d\r\n%s\r\n\r\n", serverIdLength, serverIdStr)
+	message := fmt.Sprintf("-2\r\n8\r\nCREATION\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", serverIdLength, serverIdStr, len(url), url)
 	return message
 }
 

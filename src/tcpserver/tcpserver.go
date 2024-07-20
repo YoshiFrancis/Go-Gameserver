@@ -59,14 +59,11 @@ func (s *TCPServer) Run() {
 			for _, server := range s.Servers {
 				server.Send <- message
 			}
-		// case message := <-s.requests:
-		// 	_, args := messages.Decode(message)
-		// 	fmt.Println("Received ", args)
 		case c := <-s.Register:
 			fmt.Println("Server registered!")
 			s.Servers[c.serverId] = c
 			go c.run()
-			s.Broadcast <- []byte(messages.ServerCreation(c.serverId))
+			s.Broadcast <- []byte(messages.ServerCreation(c.serverId, c.Url))
 		case c := <-s.unregister:
 			delete(s.Servers, c.serverId)
 			fmt.Println("Server unregistered")
