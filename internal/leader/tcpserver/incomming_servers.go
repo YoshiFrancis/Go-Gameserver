@@ -3,10 +3,6 @@ package tcpserver
 import (
 	"fmt"
 	"net"
-	"strconv"
-	"strings"
-
-	"github.com/yoshifrancis/go-gameserver/src/messages"
 )
 
 // TODO
@@ -21,9 +17,10 @@ type ExtenalTCPServer struct {
 	Shutdown    chan bool
 	Url         string
 	serverId    int
+	class       string
 }
 
-func NewExternalTCPServer(main_server *TCPServer, conn net.Conn, url string, serverId int) *ExtenalTCPServer {
+func NewExternalTCPServer(main_server *TCPServer, conn net.Conn, url string, serverId int, class string) *ExtenalTCPServer {
 	return &ExtenalTCPServer{
 		main_server: main_server,
 		conn:        conn,
@@ -31,6 +28,7 @@ func NewExternalTCPServer(main_server *TCPServer, conn net.Conn, url string, ser
 		Shutdown:    make(chan bool, 1),
 		Url:         url,
 		serverId:    serverId,
+		class:       class,
 	}
 }
 
@@ -46,7 +44,7 @@ func (s *ExtenalTCPServer) run() {
 				fmt.Println("Error sending to server at: ", s.Url)
 			}
 		case <-s.Shutdown:
-			return
+			break
 		}
 	}
 }
@@ -60,43 +58,24 @@ func (s *ExtenalTCPServer) read() {
 			s.Shutdown <- true
 			return
 		}
-		fmt.Println("External tcp server received message")
-		flag, args := messages.Decode(buffer)
-		args[0] = strings.ToLower(args[0])
-		if flag == '-' {
-			switch args[0] {
-			case "serverid":
-				serverId, err := strconv.Atoi(args[1])
-				if err != nil {
-					fmt.Println("given invalid server id")
-					continue
-				}
-				s.serverId = serverId
-			case "accept":
-				serverId, err := strconv.Atoi(args[1])
-				if err != nil {
-					fmt.Println("given invalid server id")
-					continue
-				}
-				url := args[2]
-				s.main_server.AcceptConnectedServer(serverId, url)
-			case "shutdown":
-				s.main_server.unregister <- s
 
-				// the server that was originally connected now must broadcast to all other servers rhat there is a neew server
-				// i have to come up with new key word to signal that the new server has already been accepted by one of the nodes in the group already
-				// the new servers will connect with the already connected node
-				// this original node that accepted has the send all data about the servers to tje new node
-
-			}
+		if s.class == "F" {
+			s.main_server.fRequests <- buffer
 		} else {
-			s.main_server.requests <- buffer
+			s.main_server.fRequests <- buffer
 		}
+
 	}
 }
 
 func (s *ExtenalTCPServer) close() {
-	s.main_server.unregister <- s
+	close(s.Send)
+	close(s.Shutdown)
+	if s.class == "F" {
+		s.main_server.fRegistry <- s
+	} else {
+		s.main_server.lRegistry <- s
+	}
 	s.conn.Close()
 	close(s.Send)
 }

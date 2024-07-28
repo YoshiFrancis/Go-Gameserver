@@ -34,9 +34,6 @@ func NewTCPServer(requests chan []byte, serverId string) *TCPServer {
 	}
 }
 
-// TODO
-// listen for follower requests and registry
-// move on to leader requests and registry
 func (s *TCPServer) Run() {
 	defer s.Shutdown()
 	for {
@@ -69,7 +66,6 @@ func (s *TCPServer) Run() {
 		select {
 		case l := <-s.lRegistry:
 			s.mux.Lock()
-			defer s.mux.Unlock()
 
 			if server, ok := s.lServers[l.conn.LocalAddr().String()]; ok {
 				server.Shutdown <- true
@@ -77,10 +73,11 @@ func (s *TCPServer) Run() {
 			} else {
 				s.lServers[l.conn.LocalAddr().String()] = l
 			}
+
+			s.mux.Unlock()
 			// tell followers and leaders I guess
 		case f := <-s.fRegistry:
 			s.mux.Lock()
-			defer s.mux.Unlock()
 
 			if server, ok := s.fServers[f.serverId]; ok {
 				server.Shutdown <- true
@@ -88,6 +85,9 @@ func (s *TCPServer) Run() {
 			} else {
 				s.fServers[f.serverId] = f
 			}
+			go f.run()
+
+			s.mux.Unlock()
 			// do not need to tell anyone about them
 		case lReq := <-s.lRequests:
 			fmt.Println(lReq)
@@ -118,7 +118,7 @@ func (s *TCPServer) listenForFollower(listener net.Listener) bool {
 			fmt.Println("Error accepting new connection!")
 			continue
 		}
-		s.fRegistry <- NewExternalTCPServer(s, conn, conn.LocalAddr().String(), s.idGen())
+		s.fRegistry <- NewExternalTCPServer(s, conn, conn.LocalAddr().String(), s.idGen(), "F")
 	}
 }
 
@@ -131,7 +131,7 @@ func (s *TCPServer) listenForLeaders(listener net.Listener) {
 			fmt.Println("Error accepting new connection!")
 			continue
 		}
-		s.lRegistry <- NewExternalTCPServer(s, conn, conn.LocalAddr().String(), s.idGen())
+		s.lRegistry <- NewExternalTCPServer(s, conn, conn.LocalAddr().String(), s.idGen(), "L")
 	}
 }
 
@@ -140,5 +140,17 @@ func (s *TCPServer) listenForLeaders(listener net.Listener) {
 // tell all leaders (for later)
 func (s *TCPServer) Shutdown() {
 	fmt.Println("tcpserver shutting down")
+	for _, l := range s.lServers {
+		l.Shutdown <- true
+	}
+
+	for _, f := range s.fServers {
+		f.Shutdown <- true
+	}
+
+	close(s.fRequests)
+	close(s.lRequests)
+	close(s.lRegistry)
+	close(s.fRegistry)
 
 }
