@@ -23,22 +23,21 @@ const (
 )
 
 type WSServer struct {
-	Clients   map[string]*Client
-	broadcast chan []byte
-	leaving   chan string
-	register  chan string
-	requests  chan []byte
-	serverId  int
+	Clients    map[string]*Client
+	broadcast  chan []byte
+	unregister chan string
+	register   chan string
+	TCPfrom    chan []byte
+	TCPto      chan []byte
+	ServerId   string
 }
 
-func NewWSServer(requests chan []byte) *WSServer {
+func NewWSServer() *WSServer {
 	return &WSServer{
-		Clients:   make(map[string]*Client),
-		broadcast: make(chan []byte, 1024),
-		leaving:   make(chan string, 20),
-		register:  make(chan string, 12),
-		requests:  requests,
-		serverId:  -1,
+		Clients:    make(map[string]*Client),
+		broadcast:  make(chan []byte, 1024),
+		unregister: make(chan string, 20),
+		register:   make(chan string, 12),
 	}
 }
 
@@ -49,7 +48,7 @@ func (ws *WSServer) Run() {
 			for _, client := range ws.Clients {
 				client.Send <- msg
 			}
-		case client := <-ws.leaving:
+		case client := <-ws.unregister:
 			close(ws.Clients[client].Send)
 			delete(ws.Clients, client)
 		}
@@ -59,7 +58,7 @@ func (ws *WSServer) Run() {
 func (ws *WSServer) Shutdown() {
 	fmt.Println("wsserver shutting down")
 	close(ws.broadcast)
-	close(ws.leaving)
+	close(ws.unregister)
 	close(ws.register)
 }
 
@@ -91,9 +90,8 @@ func (ws *WSServer) getUsername(conn *websocket.Conn) {
 
 	client.username = string(message)
 	fmt.Println("New client!", client.username)
-	register_msg := messages.ServerJoinUser(client.username, ws.serverId)
-	ws.requests <- []byte(register_msg)
+	register_msg := messages.ServerJoinUser(client.username, -1)
+	ws.TCPto <- []byte(register_msg)
 	go client.read()
 	go client.write()
-
 }

@@ -15,7 +15,7 @@ type Client struct {
 
 func (c *Client) read() {
 	defer func() {
-		c.server.leaving <- c.username
+		c.server.unregister <- c.username
 		c.conn.Close()
 	}()
 
@@ -27,13 +27,13 @@ func (c *Client) read() {
 		}
 
 		fmt.Println(c.username + " received a message: " + string(message))
-		c.server.requests <- []byte(c.handleCommand(string(message)))
+		c.server.TCPto <- []byte(c.handleCommand(string(message)))
 	}
 }
 
 func (c *Client) write() {
 	defer func() {
-		c.server.leaving <- c.username
+		c.server.unregister <- c.username
 		c.conn.Close()
 	}()
 
