@@ -44,7 +44,7 @@ func (s *ExtenalTCPServer) run() {
 				fmt.Println("Error sending to server at: ", s.Url)
 			}
 		case <-s.Shutdown:
-			break
+			return
 		}
 	}
 }

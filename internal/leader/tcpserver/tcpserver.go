@@ -16,12 +16,12 @@ type TCPServer struct {
 	fRegistry chan *ExtenalTCPServer
 	lRequests chan []byte
 	fRequests chan []byte
-	serverId  string
+	url       string
 	idGen     func() int
 	mux       sync.Mutex
 }
 
-func NewTCPServer(requests chan []byte, serverId string) *TCPServer {
+func NewTCPServer() *TCPServer {
 	return &TCPServer{
 		lServers:  make(map[string]*ExtenalTCPServer),
 		fServers:  make(map[int]*ExtenalTCPServer),
@@ -29,8 +29,8 @@ func NewTCPServer(requests chan []byte, serverId string) *TCPServer {
 		fRegistry: make(chan *ExtenalTCPServer, 5),
 		lRequests: make(chan []byte, 1024),
 		fRequests: make(chan []byte, 1024),
-		serverId:  serverId,
-		mux:       sync.Mutex{},
+
+		mux: sync.Mutex{},
 	}
 }
 
@@ -124,6 +124,7 @@ func (s *TCPServer) listenForFollower(listener net.Listener) bool {
 
 func (s *TCPServer) listenForLeaders(listener net.Listener) {
 	defer listener.Close()
+	s.url = listener.Addr().String()
 	fmt.Println("leader beginning to listen for other leaders at: ", listener.Addr().String())
 	for {
 		conn, err := listener.Accept()
