@@ -97,7 +97,16 @@ func (s *TCPServer) Run() {
 			// handle request from follower
 		}
 	}
+}
 
+func (s *TCPServer) Input() {
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		text, _ := reader.ReadBytes('\n')
+		text = []byte(strings.Replace(string(text), "\n", "", -1))
+		text_string := string(text)
+		fmt.Println("handle: ", text_string) // TODO
+	}
 }
 
 func promptText(prompt string) string {
@@ -153,5 +162,4 @@ func (s *TCPServer) Shutdown() {
 	close(s.lRequests)
 	close(s.lRegistry)
 	close(s.fRegistry)
-
 }
