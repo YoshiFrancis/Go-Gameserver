@@ -1,6 +1,6 @@
 package storage
 
-type room interface {
+type Room interface {
 	join(username string)
 	leave(username string)
 	deliverAll(message string)

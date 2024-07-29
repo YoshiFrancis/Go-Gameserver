@@ -7,18 +7,22 @@ import (
 	"os"
 	"strings"
 	"sync"
+
+	"github.com/yoshifrancis/go-gameserver/internal/leader/storage"
 )
 
 type TCPServer struct {
-	lServers  map[string]*ExtenalTCPServer // name of server, tcp connection container
-	fServers  map[int]*ExtenalTCPServer    // id of follower server, tcp connnection container
-	lRegistry chan *ExtenalTCPServer
-	fRegistry chan *ExtenalTCPServer
-	lRequests chan []byte
-	fRequests chan []byte
-	url       string
-	idGen     func() int
-	mux       sync.Mutex
+	lServers    map[string]*ExtenalTCPServer // name of server, tcp connection container
+	fServers    map[int]*ExtenalTCPServer    // id of follower server, tcp connnection container
+	lRegistry   chan *ExtenalTCPServer
+	fRegistry   chan *ExtenalTCPServer
+	lRequests   chan []byte
+	fRequests   chan []byte
+	url         string
+	idGen       func() int
+	userStorage *storage.Storage[string, storage.User]
+	roomStorage *storage.Storage[string, storage.Room]
+	mux         sync.Mutex
 }
 
 func NewTCPServer() *TCPServer {
