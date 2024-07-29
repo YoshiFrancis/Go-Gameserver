@@ -1,35 +1,49 @@
 package storage
 
+import "fmt"
+
 type Lobby struct {
 	users    *Storage[string, User]
 	roomId   int
 	registry chan User
+	prevRoom Room
 }
 
-func NewLobby(id int) *Lobby {
+func NewLobby(id int, prevRoom Room) *Lobby {
 	return &Lobby{
 		users:    NewStorage[string, User](),
 		roomId:   id,
 		registry: make(chan User, 8),
+		prevRoom: prevRoom,
 	}
 }
 
-func (h *Lobby) join(username string) {
-
+func (l *Lobby) join(user User) {
+	user.room.leave(user)
+	l.users.Set(user.username, user)
 }
 
-func (h *Lobby) leave(username string) {
-
+func (l *Lobby) leave(user User) {
+	l.users.Delete(user.username)
+	l.prevRoom.join(user)
 }
 
-func (h *Lobby) deliverAll(message string) {
-
+func (l *Lobby) deliverAll(message string) {
+	for user := range l.users.Values() {
+		// --------------------------- send user message ---------------------------
+		fmt.Println("Message for ", user)
+	}
 }
 
-func (h *Lobby) handleMessage(message string, sender string) {
-
+func (l *Lobby) handleMessage(message string, sender string) {
+	// --------------------------- lobby handle message ---------------------------
 }
 
-func (h *Lobby) getInfo() string {
+func (l *Lobby) getInfo() string {
+	// --------------------------- lobby info message ---------------------------
 	return "This is the lobby."
+}
+
+func (l *Lobby) getUserStorage() *Storage[string, User] {
+	return l.users
 }
