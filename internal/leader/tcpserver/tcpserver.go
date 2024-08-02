@@ -18,8 +18,8 @@ type TCPServer struct {
 	fRegistry   chan *ExtenalTCPServer
 	lRequests   chan []byte
 	fRequests   chan []byte
-	url         string
 	idGen       func() int
+	url         string
 	userStorage *storage.Storage[string, storage.User]
 	roomStorage *storage.Storage[string, storage.Room]
 	mux         sync.Mutex
@@ -29,44 +29,27 @@ func NewTCPServer() *TCPServer {
 	return &TCPServer{
 		lServers:  make(map[string]*ExtenalTCPServer),
 		fServers:  make(map[int]*ExtenalTCPServer),
-		lRegistry: make(chan *ExtenalTCPServer, 5),
-		fRegistry: make(chan *ExtenalTCPServer, 5),
-		lRequests: make(chan []byte, 1024),
-		fRequests: make(chan []byte, 1024),
-
-		mux: sync.Mutex{},
+		lRegistry: make(chan *ExtenalTCPServer),
+		fRegistry: make(chan *ExtenalTCPServer),
+		lRequests: make(chan []byte),
+		fRequests: make(chan []byte),
+		idGen:     idGen(),
+		mux:       sync.Mutex{},
 	}
 }
 
-func (s *TCPServer) Run() {
+func (s *TCPServer) Run(tcpPort string) {
 	defer s.Shutdown()
-	for {
-		leaderUrl := promptText("Input port to listen for other servers or -1 if no server-> :<PORT>")
-		if leaderUrl == ":-1" {
-			break
-		}
-		leaderListener, err := net.Listen("tcp", leaderUrl)
-		if err != nil {
-			fmt.Println("Error setting up listener for tcp server", err.Error())
-			continue
-		}
-		go s.listenForLeaders(leaderListener)
-		break
+
+	leaderListener, err := net.Listen("tcp", tcpPort)
+	if err != nil {
+		fmt.Println("Error setting up listener for tcp server", err.Error())
+		panic(err)
 	}
+	go s.listenForFollower(leaderListener)
 
 	for {
-		followerUrl := promptText("Input port to listen for follower -> :<PORT>")
-		followerListener, err := net.Listen("tcp", followerUrl)
-		if err != nil {
-			fmt.Println("Error setting up listener for tcp server", err.Error())
-			continue
-		}
-
-		go s.listenForFollower(followerListener)
-		break
-	}
-
-	for {
+		fmt.Println("leader now running!")
 		select {
 		case l := <-s.lRegistry:
 			s.mux.Lock()
@@ -82,7 +65,6 @@ func (s *TCPServer) Run() {
 			// tell followers and leaders I guess
 		case f := <-s.fRegistry:
 			s.mux.Lock()
-
 			if server, ok := s.fServers[f.serverId]; ok {
 				server.Shutdown <- true
 				delete(s.fServers, f.serverId)
@@ -113,24 +95,17 @@ func (s *TCPServer) Input() {
 	}
 }
 
-func promptText(prompt string) string {
-	fmt.Println(prompt)
-	reader := bufio.NewReader(os.Stdin)
-	text, _ := reader.ReadBytes('\n')
-	text = []byte(strings.Replace(string(text), "\n", "", -1))
-	return string(text)
-}
-
 func (s *TCPServer) listenForFollower(listener net.Listener) bool {
-
 	defer listener.Close()
-	fmt.Println("leader beginning to listen for followers at: ", listener.Addr().String())
+	s.url = listener.Addr().String()
+	fmt.Println("leader beginning to listen for followers at: ", s.url)
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
 			fmt.Println("Error accepting new connection!")
 			continue
 		}
+		fmt.Println("a follower connected!")
 		s.fRegistry <- NewExternalTCPServer(s, conn, conn.LocalAddr().String(), s.idGen(), "F")
 	}
 }
@@ -146,6 +121,14 @@ func (s *TCPServer) listenForLeaders(listener net.Listener) {
 			continue
 		}
 		s.lRegistry <- NewExternalTCPServer(s, conn, conn.LocalAddr().String(), s.idGen(), "L")
+	}
+}
+
+func idGen() func() int {
+	i := 1
+	return func() int {
+		i++
+		return i
 	}
 }
 

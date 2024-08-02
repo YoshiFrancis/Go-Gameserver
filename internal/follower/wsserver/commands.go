@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/yoshifrancis/go-gameserver/src/messages"
+	"github.com/yoshifrancis/go-gameserver/internal/messages"
 )
 
 func (c *Client) handleCommand(message string) (request_msg string) {

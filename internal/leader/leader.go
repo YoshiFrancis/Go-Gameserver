@@ -4,7 +4,7 @@ import (
 	"github.com/yoshifrancis/go-gameserver/internal/leader/tcpserver"
 )
 
-func Leader_init(tcpPort int) {
+func Leader_init(tcpPort string) {
 	leader := tcpserver.NewTCPServer()
-	go leader.Run()
+	go leader.Run(tcpPort)
 }

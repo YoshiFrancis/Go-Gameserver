@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
-	"github.com/yoshifrancis/go-gameserver/src/messages"
+	"github.com/yoshifrancis/go-gameserver/internal/messages"
 )
 
 var upgrader = websocket.Upgrader{

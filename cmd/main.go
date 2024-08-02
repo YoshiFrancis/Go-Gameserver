@@ -4,65 +4,46 @@ import (
 	"bufio"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
-	leaderserver "github.com/yoshifrancis/go-gameserver/src/leader-server"
-	"github.com/yoshifrancis/go-gameserver/src/messages"
-	"github.com/yoshifrancis/go-gameserver/src/tcpserver"
-	"github.com/yoshifrancis/go-gameserver/src/wsserver"
+	"github.com/yoshifrancis/go-gameserver/internal/follower"
+	"github.com/yoshifrancis/go-gameserver/internal/leader"
 )
 
 func main() {
-
 	if len(os.Args) != 3 {
-		log.Fatal("Usgae: go run main.go <WS PORT> < TCPPORT>")
+		log.Fatal("Usage: go run main.go <TYPE OF SERVER (L, F)> <PORT>")
 	}
 
-	wsPort := ":" + os.Args[1]
-	tcpPort := ":" + os.Args[2]
+	typing := os.Args[1]
+	port := os.Args[2]
+	_, err := strconv.Atoi(port)
+	if err != nil {
+		fmt.Println("Given an invalid port num")
+	}
 
-	leader := leaderserver.NewLeader()
+	if typing == "L" {
+		leader.Leader_init(":" + port)
+	} else if typing == "F" {
+		fmt.Println("What is the address of the leader you would like to follow?")
+		leaderip := input()
+		follower.Follower_init(":"+port, leaderip)
+	}
 
-	wsserver := wsserver.NewWSServer(leader.WSrequests)
-	tcpserver := tcpserver.NewTCPServer(leader.TCPrequests, leader.NewConnections)
-	leader.WSServer = wsserver
-	leader.TCPServer = tcpserver
-	go leader.Run()
-	go wsserver.Run()
-	go tcpserver.Run()
-
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		wsserver.Serve(w, r)
-	})
-
-	go input(leader)
-	go tcpserver.Listen(tcpPort)
-	log.Fatal(http.ListenAndServe(wsPort, nil))
-}
-
-func input(leader *leaderserver.Leader) {
-	reader := bufio.NewReader(os.Stdin)
 	for {
-		text, _ := reader.ReadBytes('\n')
-		text = []byte(strings.Replace(string(text), "\n", "", -1))
-		text_string := string(text)
-		if text_string[0] == '/' {
-			fmt.Println("Attempting to connect to ", text_string[:1])
-			go func() {
-				connected := leader.ConnectToServer(text_string[1:])
-				if connected {
-					fmt.Println("Successfully connected to server: ", text_string[1:])
-				} else {
-					fmt.Println("Failed to connect to server: ", text_string[1:])
-				}
-			}()
-		} else if text_string[0] == '\\' {
-			msg := messages.HubBroadcast("server", 1, text_string[1:])
-			leader.TCPServer.Broadcast <- []byte(msg)
-		} else {
-			fmt.Println("Invalid command")
+		user_input := input()
+		if user_input == "exit" {
+			break
 		}
 	}
+}
+
+func input() string {
+	reader := bufio.NewReader(os.Stdin)
+	text, _ := reader.ReadBytes('\n')
+	text = []byte(strings.Replace(string(text), "\n", "", -1))
+	text_string := string(text)
+	return text_string
 }

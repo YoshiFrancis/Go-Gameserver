@@ -16,27 +16,27 @@ func NewHub(id int) *Hub {
 	}
 }
 
-func (h *Hub) join(user User) {
-	user.room.leave(user)
+func (h *Hub) Join(user User) {
+	user.room.Leave(user)
 	h.users.Set(user.username, user)
 }
 
-func (h *Hub) leave(user User) {
+func (h *Hub) Leave(user User) {
 	h.users.Delete(user.username)
 }
 
-func (h *Hub) deliverAll(message string) {
+func (h *Hub) DeliverAll(message string) {
 	for user := range h.users.Values() {
 		// --------------------------- send user message ---------------------------
 		fmt.Println("Message for ", user)
 	}
 }
 
-func (h *Hub) handleMessage(message string, sender string) {
+func (h *Hub) HandleMessage(message string, sender string) {
 	// --------------------------- hub handle message ---------------------------
 }
 
-func (h *Hub) getInfo() string {
+func (h *Hub) GetInfo() string {
 	// --------------------------- lobby info message ---------------------------
 	return "This is the hub. This is the default area where all users are sent to on joining."
 }

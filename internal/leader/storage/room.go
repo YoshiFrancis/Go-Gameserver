@@ -1,10 +1,10 @@
 package storage
 
 type Room interface {
-	join(user User)
-	leave(user User)
-	deliverAll(message string)
-	handleMessage(message string, sender string)
-	getInfo() string
+	HandleMessage(message string, sender string)
+	Join(user User)
+	Leave(user User)
+	DeliverAll(message string)
+	GetInfo() string
 	getUserStorage() *Storage[string, User]
 }

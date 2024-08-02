@@ -18,28 +18,28 @@ func NewLobby(id int, prevRoom Room) *Lobby {
 	}
 }
 
-func (l *Lobby) join(user User) {
-	user.room.leave(user)
+func (l *Lobby) Join(user User) {
+	user.room.Leave(user)
 	l.users.Set(user.username, user)
 }
 
-func (l *Lobby) leave(user User) {
+func (l *Lobby) Leave(user User) {
 	l.users.Delete(user.username)
-	l.prevRoom.join(user)
+	l.prevRoom.Join(user)
 }
 
-func (l *Lobby) deliverAll(message string) {
+func (l *Lobby) DeliverAll(message string) {
 	for user := range l.users.Values() {
 		// --------------------------- send user message ---------------------------
 		fmt.Println("Message for ", user)
 	}
 }
 
-func (l *Lobby) handleMessage(message string, sender string) {
+func (l *Lobby) HandleMessage(message string, sender string) {
 	// --------------------------- lobby handle message ---------------------------
 }
 
-func (l *Lobby) getInfo() string {
+func (l *Lobby) GetInfo() string {
 	// --------------------------- lobby info message ---------------------------
 	return "This is the lobby."
 }
