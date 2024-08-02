@@ -1,6 +1,7 @@
 package wsserver
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -21,6 +22,10 @@ const (
 	NONE     = "None"
 	USERNAME = "Username"
 )
+
+type Username struct {
+	Username string `json:"username"`
+}
 
 type WSServer struct {
 	Clients    map[string]*Client
@@ -88,7 +93,9 @@ func (ws *WSServer) getUsername(conn *websocket.Conn) {
 		return
 	}
 
-	client.username = string(message)
+	var username Username
+	json.Unmarshal(message, &username)
+	client.username = username.Username
 	fmt.Println("New client!", client.username)
 	register_msg := messages.ServerJoinUser(client.username, -1)
 	ws.TCPto <- []byte(register_msg)
