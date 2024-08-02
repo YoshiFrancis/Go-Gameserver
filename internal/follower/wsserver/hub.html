@@ -4,14 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://unpkg.com/htmx.org@2.0.1"></script>
+  <script src="https://unpkg.com/htmx-ext-ws@2.0.0/ws.js"></script>
   <title>Go Hub</title>
 </head>
 <body>
-  <h1>THE GO HUB</h1>
-  <h2>FOR THE YOSHIS</h2>
-  <ol id="username-list">
-    <li>YoshiKing101</li>
-    <li>Im-Narwhal</li>
-  </ol>
+  <h1>WebSocket Connection</h1>
+  <div hx-ext="ws" ws-connect="{{.WebsocketHost}}">
+    <p>WebSocket URL: {{.WebsocketHost}}</p>
+  </div>
 </body>
 </html>

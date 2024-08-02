@@ -8,14 +8,14 @@
   <title>Go Hub</title>
 </head>
 <body>
-  <h1>GET THE USERNAME</h1>
-  <div hx-ext="ws" ws-connect="http://localhost:8001">
+  <h1>Get the Username</h1>
+  <div hx-ext="ws" ws-connect="/username">
     <form id="form" ws-send>
-        <input name="username">
-        <br>
-        <button type="submit">Submit</button>
+      <label for="username">Username:</label>
+      <input id="username" name="username" type="text" required>
+      <br>
+      <button type="submit">Submit</button>
     </form>
   </div>
-  
 </body>
 </html>

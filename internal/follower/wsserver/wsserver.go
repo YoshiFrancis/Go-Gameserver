@@ -3,12 +3,21 @@ package wsserver
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/websocket"
 	"github.com/yoshifrancis/go-gameserver/internal/messages"
 )
+
+var usernameTemplate *template.Template
+var hubTemplate *template.Template
+
+func init() {
+	hubTemplate = template.Must(template.ParseFiles("../internal/follower/wsserver/hub.html"))
+	usernameTemplate = template.Must(template.ParseFiles("../internal/follower/wsserver/username.html"))
+}
 
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
@@ -40,9 +49,29 @@ type WSServer struct {
 func NewWSServer() *WSServer {
 	return &WSServer{
 		Clients:    make(map[string]*Client),
-		broadcast:  make(chan []byte, 1024),
-		unregister: make(chan string, 20),
-		register:   make(chan string, 12),
+		broadcast:  make(chan []byte),
+		unregister: make(chan string),
+		register:   make(chan string),
+	}
+}
+
+func (ws *WSServer) Username(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println("Upgrade error:", err)
+		return
+	}
+	defer conn.Close()
+
+	for {
+		var username Username
+		err := conn.ReadJSON(&username)
+		if err != nil {
+			log.Println("Read error of username:", err)
+			break
+		}
+
+		log.Printf("Received username: %s", username.Username)
 	}
 }
 
@@ -67,15 +96,18 @@ func (ws *WSServer) Shutdown() {
 	close(ws.register)
 }
 
-func (ws *WSServer) Serve(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("User has connected!")
-	conn, err := upgrader.Upgrade(w, r, nil)
+func (ws *WSServer) Home(w http.ResponseWriter, r *http.Request) {
+	err := usernameTemplate.Execute(w, struct {
+		WebsocketHost string
+	}{
+		WebsocketHost: "ws://" + r.Host + "/username",
+	})
+
 	if err != nil {
-		log.Println(err)
+		http.Error(w, "Failed to render template", http.StatusInternalServerError)
+		fmt.Println("Error rendering template:", err)
 		return
 	}
-
-	go ws.getUsername(conn)
 }
 
 func (ws *WSServer) getUsername(conn *websocket.Conn) {
@@ -99,6 +131,7 @@ func (ws *WSServer) getUsername(conn *websocket.Conn) {
 	fmt.Println("New client!", client.username)
 	register_msg := messages.ServerJoinUser(client.username, -1)
 	ws.TCPto <- []byte(register_msg)
+
 	go client.read()
 	go client.write()
 }
