@@ -62,13 +62,14 @@ func (s *ExtenalTCPServer) read() {
 		if s.class == "F" {
 			s.main_server.fRequests <- buffer
 		} else {
-			s.main_server.fRequests <- buffer
+			s.main_server.lRequests <- buffer
 		}
 
 	}
 }
 
 func (s *ExtenalTCPServer) close() {
+	fmt.Println("Follower server is closing down")
 	close(s.Send)
 	close(s.Shutdown)
 	if s.class == "F" {
@@ -77,5 +78,4 @@ func (s *ExtenalTCPServer) close() {
 		s.main_server.lRegistry <- s
 	}
 	s.conn.Close()
-	close(s.Send)
 }

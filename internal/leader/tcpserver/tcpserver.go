@@ -49,7 +49,6 @@ func (s *TCPServer) Run(tcpPort string) {
 	go s.listenForFollower(leaderListener)
 
 	for {
-		fmt.Println("leader now running!")
 		select {
 		case l := <-s.lRegistry:
 			s.mux.Lock()
@@ -65,13 +64,13 @@ func (s *TCPServer) Run(tcpPort string) {
 			// tell followers and leaders I guess
 		case f := <-s.fRegistry:
 			s.mux.Lock()
+
 			if server, ok := s.fServers[f.serverId]; ok {
-				server.Shutdown <- true
-				delete(s.fServers, f.serverId)
+				delete(s.fServers, server.serverId)
 			} else {
 				s.fServers[f.serverId] = f
+				go f.run()
 			}
-			go f.run()
 
 			s.mux.Unlock()
 			// do not need to tell anyone about them
