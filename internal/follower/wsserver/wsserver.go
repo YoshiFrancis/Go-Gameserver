@@ -8,15 +8,14 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"github.com/yoshifrancis/go-gameserver/internal/leader/storage"
 	"github.com/yoshifrancis/go-gameserver/internal/messages"
 )
 
-var usernameTemplate *template.Template
-var hubTemplate *template.Template
+var indexTemplate *template.Template
 
 func init() {
-	hubTemplate = template.Must(template.ParseFiles("../internal/follower/wsserver/hub.html"))
-	usernameTemplate = template.Must(template.ParseFiles("../internal/follower/wsserver/username.html"))
+	indexTemplate = template.Must(template.ParseFiles("../internal/follower/wsserver/index.html"))
 }
 
 var upgrader = websocket.Upgrader{
@@ -32,15 +31,11 @@ const (
 	USERNAME = "Username"
 )
 
-type Username struct {
-	Username string `json:"username"`
-}
-
 type WSServer struct {
-	Clients    map[string]*Client
+	Clients    *storage.Storage[string, *Client]
 	broadcast  chan []byte
-	unregister chan string
-	register   chan string
+	unregister chan *Client
+	register   chan *Client
 	TCPfrom    chan []byte
 	TCPto      chan []byte
 	ServerId   string
@@ -48,43 +43,56 @@ type WSServer struct {
 
 func NewWSServer() *WSServer {
 	return &WSServer{
-		Clients:    make(map[string]*Client),
+		Clients:    storage.NewStorage[string, *Client](),
 		broadcast:  make(chan []byte),
-		unregister: make(chan string),
-		register:   make(chan string),
+		unregister: make(chan *Client),
+		register:   make(chan *Client),
 	}
 }
 
-func (ws *WSServer) Username(w http.ResponseWriter, r *http.Request) {
+type Username struct {
+	Username string `json:"username"`
+}
+
+func (ws *WSServer) Home(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("serving home")
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println("Upgrade error:", err)
+		log.Println("Upgrade error: ", err)
 		return
 	}
-	defer conn.Close()
 
-	for {
-		var username Username
-		err := conn.ReadJSON(&username)
-		if err != nil {
-			log.Println("Read error of username:", err)
-			break
-		}
-
-		log.Printf("Received username: %s", username.Username)
+	// Read message from browser
+	_, p, err := conn.ReadMessage()
+	if err != nil {
+		log.Println("error reading: ", err)
+		return
 	}
+
+	var username Username
+	err = json.Unmarshal(p, &username)
+	if err != nil {
+		log.Println("Error unmarshalling JSON:", err)
+		return
+	}
+
+	NewClient(username.Username, conn, ws)
+	register_msg := messages.ServerJoinUser(username.Username, -1)
+	ws.TCPto <- []byte(register_msg)
 }
 
 func (ws *WSServer) Run() {
 	for {
 		select {
 		case msg := <-ws.broadcast:
-			for _, client := range ws.Clients {
+			for _, client := range ws.Clients.Values() {
 				client.Send <- msg
 			}
+		case client := <-ws.register:
+			ws.Clients.Set(client.username, client)
 		case client := <-ws.unregister:
-			close(ws.Clients[client].Send)
-			delete(ws.Clients, client)
+			close(client.Send)
+			ws.Clients.Delete(client.username)
 		}
 	}
 }
@@ -96,42 +104,18 @@ func (ws *WSServer) Shutdown() {
 	close(ws.register)
 }
 
-func (ws *WSServer) Home(w http.ResponseWriter, r *http.Request) {
-	err := usernameTemplate.Execute(w, struct {
-		WebsocketHost string
+func (ws *WSServer) Index(w http.ResponseWriter, r *http.Request) {
+	err := indexTemplate.Execute(w, struct {
+		HasUsername bool
+		usernames   []string
 	}{
-		WebsocketHost: "ws://" + r.Host + "/username",
-	})
-
+		HasUsername: false,
+		usernames:   []string{},
+	},
+	)
 	if err != nil {
 		http.Error(w, "Failed to render template", http.StatusInternalServerError)
 		fmt.Println("Error rendering template:", err)
 		return
 	}
-}
-
-func (ws *WSServer) getUsername(conn *websocket.Conn) {
-	client := &Client{
-		username: "",
-		conn:     conn,
-		Send:     make(chan []byte, 256),
-		server:   ws,
-	}
-
-	_, message, err := conn.ReadMessage()
-	if err != nil {
-		fmt.Println("Client is going to stop reading!")
-		conn.Close()
-		return
-	}
-
-	var username Username
-	json.Unmarshal(message, &username)
-	client.username = username.Username
-	fmt.Println("New client!", client.username)
-	register_msg := messages.ServerJoinUser(client.username, -1)
-	ws.TCPto <- []byte(register_msg)
-
-	go client.read()
-	go client.write()
 }

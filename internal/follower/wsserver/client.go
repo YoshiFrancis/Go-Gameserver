@@ -13,9 +13,21 @@ type Client struct {
 	server   *WSServer
 }
 
+func NewClient(username string, conn *websocket.Conn, server *WSServer) {
+	client := &Client{
+		username: username,
+		conn:     conn,
+		Send:     make(chan []byte),
+		server:   server,
+	}
+
+	server.register <- client
+	go client.read()
+}
+
 func (c *Client) read() {
 	defer func() {
-		c.server.unregister <- c.username
+		c.server.unregister <- c
 		c.conn.Close()
 	}()
 
@@ -33,7 +45,7 @@ func (c *Client) read() {
 
 func (c *Client) write() {
 	defer func() {
-		c.server.unregister <- c.username
+		c.server.unregister <- c
 		c.conn.Close()
 	}()
 
