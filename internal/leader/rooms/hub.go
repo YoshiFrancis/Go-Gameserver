@@ -1,16 +1,20 @@
-package storage
+package rooms
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/yoshifrancis/go-gameserver/internal/containers"
+)
 
 type Hub struct {
-	users    *Storage[string, User]
+	users    *containers.Storage[string, User]
 	roomId   int
 	registry chan User
 }
 
 func NewHub(id int) *Hub {
 	return &Hub{
-		users:    NewStorage[string, User](),
+		users:    containers.NewStorage[string, User](),
 		roomId:   id,
 		registry: make(chan User, 8),
 	}
@@ -41,6 +45,6 @@ func (h *Hub) GetInfo() string {
 	return "This is the hub. This is the default area where all users are sent to on joining."
 }
 
-func (h *Hub) getUserStorage() *Storage[string, User] {
+func (h *Hub) getUserStorage() *containers.Storage[string, User] {
 	return h.users
 }

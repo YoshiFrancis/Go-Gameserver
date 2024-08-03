@@ -1,4 +1,4 @@
-package storage
+package rooms
 
 import "net"
 

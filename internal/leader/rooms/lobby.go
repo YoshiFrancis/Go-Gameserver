@@ -1,9 +1,13 @@
-package storage
+package rooms
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/yoshifrancis/go-gameserver/internal/containers"
+)
 
 type Lobby struct {
-	users    *Storage[string, User]
+	users    *containers.Storage[string, User]
 	roomId   int
 	registry chan User
 	prevRoom Room
@@ -11,7 +15,7 @@ type Lobby struct {
 
 func NewLobby(id int, prevRoom Room) *Lobby {
 	return &Lobby{
-		users:    NewStorage[string, User](),
+		users:    containers.NewStorage[string, User](),
 		roomId:   id,
 		registry: make(chan User, 8),
 		prevRoom: prevRoom,
@@ -44,6 +48,6 @@ func (l *Lobby) GetInfo() string {
 	return "This is the lobby."
 }
 
-func (l *Lobby) getUserStorage() *Storage[string, User] {
+func (l *Lobby) getUserStorage() *containers.Storage[string, User] {
 	return l.users
 }

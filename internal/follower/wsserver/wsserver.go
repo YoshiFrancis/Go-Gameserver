@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
-	"github.com/yoshifrancis/go-gameserver/internal/leader/storage"
+	"github.com/yoshifrancis/go-gameserver/internal/containers"
 	"github.com/yoshifrancis/go-gameserver/internal/messages"
 )
 
@@ -36,7 +36,7 @@ const (
 )
 
 type WSServer struct {
-	Clients    *storage.Storage[string, *Client]
+	Clients    *containers.Storage[string, *Client]
 	broadcast  chan []byte
 	unregister chan *Client
 	register   chan *Client
@@ -47,7 +47,7 @@ type WSServer struct {
 
 func NewWSServer() *WSServer {
 	return &WSServer{
-		Clients:    storage.NewStorage[string, *Client](),
+		Clients:    containers.NewStorage[string, *Client](),
 		broadcast:  make(chan []byte),
 		unregister: make(chan *Client),
 		register:   make(chan *Client),

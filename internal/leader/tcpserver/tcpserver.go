@@ -8,7 +8,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/yoshifrancis/go-gameserver/internal/leader/storage"
+	"github.com/yoshifrancis/go-gameserver/internal/containers"
+	"github.com/yoshifrancis/go-gameserver/internal/leader/rooms"
 )
 
 type TCPServer struct {
@@ -20,8 +21,8 @@ type TCPServer struct {
 	fRequests   chan []byte
 	idGen       func() int
 	url         string
-	userStorage *storage.Storage[string, storage.User]
-	roomStorage *storage.Storage[string, storage.Room]
+	userStorage *containers.Storage[string, rooms.User]
+	roomStorage *containers.Storage[string, rooms.Room]
 	mux         sync.Mutex
 }
 
