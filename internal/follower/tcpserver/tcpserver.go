@@ -1,7 +1,6 @@
 package tcpserver
 
 import (
-	"bytes"
 	"fmt"
 	"net"
 )
@@ -39,17 +38,14 @@ func (tcp *TCPServer) Run() {
 	go tcp.leaderRead()
 	for {
 		select {
-		// 	case from := <-tcp.Lfrom: -------- these two lines somehow cause a bug (cannot switch from username.html to hub.html)
-		// 		tcp.WSto <- from
+		case from := <-tcp.Lfrom: // -------- these two lines somehow cause a bug (cannot switch from username.html to hub.html)
+			tcp.WSto <- from
 		case from := <-tcp.WSfrom:
-			fmt.Println("received message from WS: ", string(from))
-			fmt.Println("WRITING TO LEADER")
 			_, err := tcp.leaderConn.Write(from)
 			if err != nil {
 				fmt.Println("Error writing to leader: ", err)
 				return
 			}
-			fmt.Println("TCP Giving to send to leader")
 		}
 	}
 }
@@ -65,12 +61,12 @@ func (s *TCPServer) Shutdown() {
 
 func (s *TCPServer) leaderRead() {
 	for {
-		var buffer bytes.Buffer
-		_, err := s.leaderConn.Read(buffer.Bytes())
+		buffer := make([]byte, 1024)
+		n, err := s.leaderConn.Read(buffer)
 		if err != nil {
 			fmt.Println("Error reading from leader: ", err)
 			return
 		}
-		s.Lfrom <- buffer.Bytes()
+		s.Lfrom <- buffer[:n]
 	}
 }
