@@ -11,22 +11,22 @@ type Client struct {
 	username string
 	conn     *websocket.Conn
 	send     chan []byte
-	server   *WSServer
+	ws       *WSServer
 }
 
 type Message struct {
 	Message string `json:"message"`
 }
 
-func NewClient(username string, conn *websocket.Conn, server *WSServer) *Client {
+func NewClient(username string, conn *websocket.Conn, ws *WSServer) *Client {
 	client := &Client{
 		username: username,
 		conn:     conn,
 		send:     make(chan []byte),
-		server:   server,
+		ws:       ws,
 	}
 
-	server.register <- client
+	client.ws.register <- client
 	go client.read()
 	go client.write()
 	return client
@@ -34,7 +34,7 @@ func NewClient(username string, conn *websocket.Conn, server *WSServer) *Client 
 
 func (c *Client) read() {
 	defer func() {
-		c.server.unregister <- c
+		c.ws.unregister <- c
 		c.conn.Close()
 	}()
 
@@ -46,14 +46,14 @@ func (c *Client) read() {
 		}
 		var message Message
 		json.Unmarshal(jsonMessage, &message)
-		fmt.Println(c.username + " received a message: " + string(message.Message))
-		c.server.TCPto <- []byte(c.handleCommand(string(message.Message)))
+		handled := []byte(c.handleCommand(string(message.Message)))
+		c.ws.TCPto <- handled
 	}
 }
 
 func (c *Client) write() {
 	defer func() {
-		c.server.unregister <- c
+		c.ws.unregister <- c
 		c.conn.Close()
 	}()
 

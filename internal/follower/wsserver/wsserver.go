@@ -88,7 +88,6 @@ func (ws *WSServer) Home(w http.ResponseWriter, r *http.Request) {
 	c := NewClient(username.Username, conn, ws)
 	register_msg := messages.ServerJoinUser(username.Username, -1)
 	ws.TCPto <- []byte(register_msg)
-
 	hubTemp := renderTemplate(hubTemplate, struct{ Username string }{Username: username.Username})
 	c.send <- hubTemp
 }
@@ -103,8 +102,10 @@ func (ws *WSServer) Run() {
 		case client := <-ws.register:
 			ws.Clients.Set(client.username, client)
 		case client := <-ws.unregister:
-			close(client.send)
-			ws.Clients.Delete(client.username)
+			if _, ok := ws.Clients.Get(client.username); ok {
+				close(client.send)
+				ws.Clients.Delete(client.username)
+			}
 		case from := <-ws.TCPfrom:
 			ws.broadcast <- from
 		}

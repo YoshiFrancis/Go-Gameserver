@@ -39,15 +39,17 @@ func (tcp *TCPServer) Run() {
 	go tcp.leaderRead()
 	for {
 		select {
-		case to := <-tcp.Lto:
-			_, err := tcp.leaderConn.Write(to)
+		// 	case from := <-tcp.Lfrom: -------- these two lines somehow cause a bug (cannot switch from username.html to hub.html)
+		// 		tcp.WSto <- from
+		case from := <-tcp.WSfrom:
+			fmt.Println("received message from WS: ", string(from))
+			fmt.Println("WRITING TO LEADER")
+			_, err := tcp.leaderConn.Write(from)
 			if err != nil {
 				fmt.Println("Error writing to leader: ", err)
+				return
 			}
-		case from := <-tcp.Lfrom:
-			tcp.WSto <- from
-		case from := <-tcp.WSfrom:
-			tcp.Lto <- from
+			fmt.Println("TCP Giving to send to leader")
 		}
 	}
 }

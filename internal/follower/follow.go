@@ -18,15 +18,15 @@ func Follower_init(wsPort, leaderIp string) {
 	fmt.Println("Connected to leader")
 
 	ws := wsserver.NewWSServer()
-	link_1 := make(chan []byte, 1024)
-	link_2 := make(chan []byte, 1024)
+	link_1 := make(chan []byte)
+	link_2 := make(chan []byte)
 	tcp.WSfrom = link_1
 	ws.TCPto = link_1
 	tcp.WSto = link_2
 	ws.TCPfrom = link_2
 	ws.ServerId = tcp.ServerId
 
-	// go tcp.Run()
+	go tcp.Run()
 	go ws.Run()
 
 	http.HandleFunc("/home", ws.Home)
