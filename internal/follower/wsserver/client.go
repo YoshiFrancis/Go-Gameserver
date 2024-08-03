@@ -9,20 +9,22 @@ import (
 type Client struct {
 	username string
 	conn     *websocket.Conn
-	Send     chan []byte
+	send     chan []byte
 	server   *WSServer
 }
 
-func NewClient(username string, conn *websocket.Conn, server *WSServer) {
+func NewClient(username string, conn *websocket.Conn, server *WSServer) *Client {
 	client := &Client{
 		username: username,
 		conn:     conn,
-		Send:     make(chan []byte),
+		send:     make(chan []byte),
 		server:   server,
 	}
 
 	server.register <- client
 	go client.read()
+	go client.write()
+	return client
 }
 
 func (c *Client) read() {
@@ -49,17 +51,17 @@ func (c *Client) write() {
 		c.conn.Close()
 	}()
 
-	for message := range c.Send {
+	for message := range c.send {
 		w, err := c.conn.NextWriter(websocket.TextMessage)
 		if err != nil {
 			return
 		}
 
 		w.Write(message)
-		message_count := len(c.Send)
+		message_count := len(c.send)
 		for i := 0; i < message_count; i++ {
 			w.Write([]byte("\n"))
-			w.Write(<-c.Send)
+			w.Write(<-c.send)
 		}
 
 		if err := w.Close(); err != nil {

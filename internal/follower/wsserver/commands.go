@@ -44,5 +44,5 @@ func (c *Client) handleCommand(message string) (request_msg string) {
 }
 
 func (c *Client) echo(message string) {
-	c.Send <- []byte(message)
+	c.send <- []byte(message)
 }

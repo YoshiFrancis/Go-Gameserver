@@ -1,7 +1,6 @@
 package wsserver
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -15,10 +14,12 @@ import (
 
 var indexTemplate *template.Template
 var usernameTemplate *template.Template
+var hubTemplate *template.Template
 
 func init() {
 	indexTemplate = template.Must(template.ParseFiles("../web/index.html"))
 	usernameTemplate = template.Must(template.ParseFiles("../internal/templates/username.html"))
+	hubTemplate = template.Must(template.ParseFiles("../internal/templates/hub.html"))
 }
 
 var upgrader = websocket.Upgrader{
@@ -64,7 +65,7 @@ func (ws *WSServer) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	promptUsernameTemp := renderTemplate(struct{}{})
+	promptUsernameTemp := renderTemplate(usernameTemplate, struct{}{})
 	conn.WriteMessage(websocket.TextMessage, promptUsernameTemp)
 
 	// Read message from browser
@@ -82,10 +83,14 @@ func (ws *WSServer) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	NewClient(username.Username, conn, ws)
+	fmt.Println(username.Username)
+
+	c := NewClient(username.Username, conn, ws)
 	register_msg := messages.ServerJoinUser(username.Username, -1)
 	ws.TCPto <- []byte(register_msg)
 
+	hubTemp := renderTemplate(hubTemplate, struct{ Username string }{Username: username.Username})
+	c.send <- hubTemp
 }
 
 func (ws *WSServer) Run() {
@@ -93,12 +98,12 @@ func (ws *WSServer) Run() {
 		select {
 		case msg := <-ws.broadcast:
 			for _, client := range ws.Clients.Values() {
-				client.Send <- msg
+				client.send <- msg
 			}
 		case client := <-ws.register:
 			ws.Clients.Set(client.username, client)
 		case client := <-ws.unregister:
-			close(client.Send)
+			close(client.send)
 			ws.Clients.Delete(client.username)
 		}
 	}
@@ -118,10 +123,4 @@ func (ws *WSServer) Index(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Error rendering username template:", err)
 		return
 	}
-}
-
-func renderTemplate[T any](dataStruct T) []byte {
-	var templateBuffer bytes.Buffer
-	usernameTemplate.Execute(&templateBuffer, dataStruct)
-	return templateBuffer.Bytes()
 }
