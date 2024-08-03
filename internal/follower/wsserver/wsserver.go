@@ -13,9 +13,11 @@ import (
 )
 
 var indexTemplate *template.Template
+var usernameTemplate *template.Template
 
 func init() {
 	indexTemplate = template.Must(template.ParseFiles("../internal/follower/wsserver/index.html"))
+	usernameTemplate = template.Must(template.ParseFiles("../internal/follower/wsserver/username.html"))
 }
 
 var upgrader = websocket.Upgrader{
@@ -81,6 +83,35 @@ func (ws *WSServer) Home(w http.ResponseWriter, r *http.Request) {
 	ws.TCPto <- []byte(register_msg)
 }
 
+func (ws *WSServer) Username(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		err := r.ParseForm()
+		if err != nil {
+			http.Error(w, "Unable to parse form", http.StatusBadRequest)
+			return
+		}
+
+		// Read the input value
+		username := r.FormValue("username")
+		if username == "" {
+			http.Error(w, "Username is required", http.StatusBadRequest)
+			return
+		}
+
+		err = indexTemplate.Execute(w, struct {
+			Username string
+		}{
+			Username: username,
+		},
+		)
+		if err != nil {
+			http.Error(w, "Failed to render template", http.StatusInternalServerError)
+			fmt.Println("Erorr rendering index template: ", err)
+			return
+		}
+	}
+}
+
 func (ws *WSServer) Run() {
 	for {
 		select {
@@ -105,17 +136,10 @@ func (ws *WSServer) Shutdown() {
 }
 
 func (ws *WSServer) Index(w http.ResponseWriter, r *http.Request) {
-	err := indexTemplate.Execute(w, struct {
-		HasUsername bool
-		usernames   []string
-	}{
-		HasUsername: false,
-		usernames:   []string{},
-	},
-	)
+	err := usernameTemplate.Execute(w, nil)
 	if err != nil {
 		http.Error(w, "Failed to render template", http.StatusInternalServerError)
-		fmt.Println("Error rendering template:", err)
+		fmt.Println("Error rendering username template:", err)
 		return
 	}
 }

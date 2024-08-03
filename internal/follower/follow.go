@@ -29,6 +29,7 @@ func Follower_init(wsPort, leaderIp string) {
 	// go tcp.Run()
 	go ws.Run()
 
+	http.HandleFunc("/username", ws.Username)
 	http.HandleFunc("/home", ws.Home)
 	http.HandleFunc("/", ws.Index)
 
