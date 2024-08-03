@@ -1,25 +1,27 @@
 package tcpserver
 
 import (
+	"bytes"
 	"fmt"
 	"net"
 )
 
 type TCPServer struct {
-	Broadcast chan []byte
-	Lfrom     chan []byte
-	WSfrom    chan []byte
-	WSto      chan []byte
-	conn      net.Conn
-	ServerId  string
+	Lto        chan []byte
+	Lfrom      chan []byte
+	WSfrom     chan []byte
+	WSto       chan []byte
+	leaderConn net.Conn
+	ServerId   string
 }
 
 func NewTCPServer(conn net.Conn, serverId string) *TCPServer {
 	return &TCPServer{
-		Broadcast: make(chan []byte),
-		Lfrom:     make(chan []byte),
-		conn:      conn,
-		ServerId:  serverId,
+		Lto:   make(chan []byte),
+		Lfrom: make(chan []byte),
+
+		leaderConn: conn,
+		ServerId:   serverId,
 	}
 }
 
@@ -29,34 +31,44 @@ func ConnectToLeader(leaderIp string) *TCPServer {
 		fmt.Println("Error connecting to leader: ", err.Error())
 		return nil
 	}
-	// severId := getServerId(conn)
-	return NewTCPServer(conn, ":8000") // hardcoded server id
+	return NewTCPServer(conn, "") // hardcoded server id
 }
 
 func (tcp *TCPServer) Run() {
-
+	defer tcp.Shutdown()
+	go tcp.leaderRead()
+	for {
+		select {
+		case to := <-tcp.Lto:
+			_, err := tcp.leaderConn.Write(to)
+			if err != nil {
+				fmt.Println("Error writing to leader: ", err)
+			}
+		case from := <-tcp.Lfrom:
+			tcp.WSto <- from
+		case from := <-tcp.WSfrom:
+			tcp.Lto <- from
+		}
+	}
 }
-
-// func getServerId(conn net.Conn) string {
-// 	for {
-// 		message := make([]byte, 50)
-// 		_, err := conn.Read(message)
-// 		if err != nil {
-// 			fmt.Println("Client is going to stop reading!")
-// 			conn.Close()
-// 			return ""
-// 		}
-// 		_, args := messages.Decode(message)
-// 		if strings.ToLower(args[0]) == "serverid" {
-// 			return args[1]
-// 		}
-// 	}
-// }
 
 func (s *TCPServer) Shutdown() {
 	fmt.Println("tcpserver shutting down")
-	close(s.Broadcast)
+	close(s.Lto)
 	close(s.Lfrom)
 	close(s.WSfrom)
 	close(s.WSto)
+	s.leaderConn.Close()
+}
+
+func (s *TCPServer) leaderRead() {
+	for {
+		var buffer bytes.Buffer
+		_, err := s.leaderConn.Read(buffer.Bytes())
+		if err != nil {
+			fmt.Println("Error reading from leader: ", err)
+			return
+		}
+		s.Lfrom <- buffer.Bytes()
+	}
 }

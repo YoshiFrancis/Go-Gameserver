@@ -105,6 +105,8 @@ func (ws *WSServer) Run() {
 		case client := <-ws.unregister:
 			close(client.send)
 			ws.Clients.Delete(client.username)
+		case from := <-ws.TCPfrom:
+			ws.broadcast <- from
 		}
 	}
 }
