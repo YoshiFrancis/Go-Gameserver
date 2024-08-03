@@ -1,3 +1,9 @@
 <div id="app" hx-swap="outerHTML">
-  <h1>THE HUB FOR {{ .Username }}</h1>
+  <h1>Go Hub for {{ .Username }}</h1>
+  <div id="hub-chat-room"></div>
+  <form id="hub-chat-room-form" ws-send hx-target="#hub-chat-room">
+    <input name="message">
+    <br>
+    <button type="submit">Send</button>
+  </form>
 </div>

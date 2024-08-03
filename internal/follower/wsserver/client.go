@@ -1,6 +1,7 @@
 package wsserver
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/gorilla/websocket"
@@ -11,6 +12,10 @@ type Client struct {
 	conn     *websocket.Conn
 	send     chan []byte
 	server   *WSServer
+}
+
+type Message struct {
+	Message string `json:"message"`
 }
 
 func NewClient(username string, conn *websocket.Conn, server *WSServer) *Client {
@@ -34,14 +39,15 @@ func (c *Client) read() {
 	}()
 
 	for {
-		_, message, err := c.conn.ReadMessage()
+		_, jsonMessage, err := c.conn.ReadMessage()
 		if err != nil {
 			fmt.Println("Client is going to stop reading!")
 			break
 		}
-
-		fmt.Println(c.username + " received a message: " + string(message))
-		c.server.TCPto <- []byte(c.handleCommand(string(message)))
+		var message Message
+		json.Unmarshal(jsonMessage, &message)
+		fmt.Println(c.username + " received a message: " + string(message.Message))
+		// c.server.TCPto <- []byte(c.handleCommand(string(message)))
 	}
 }
 
