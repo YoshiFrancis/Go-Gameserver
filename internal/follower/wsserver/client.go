@@ -47,7 +47,7 @@ func (c *Client) read() {
 		var message Message
 		json.Unmarshal(jsonMessage, &message)
 		fmt.Println(c.username + " received a message: " + string(message.Message))
-		// c.server.TCPto <- []byte(c.handleCommand(string(message)))
+		c.server.TCPto <- []byte(c.handleCommand(string(message.Message)))
 	}
 }
 
