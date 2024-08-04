@@ -88,6 +88,16 @@ func readSize(r *bytes.Reader) (int, bool) {
 // _ -> for groups (if implemented in the future)
 // flag \r\n n arguments \r\n arg[0] \r\n arg[1] ... \r\n arg[n-1] \r\n\r\n
 
+func Ping() string {
+	message := "+PING\r\n\r\n"
+	return message
+}
+
+func Pong() string {
+	message := "+PONG\r\n\r\n"
+	return message
+}
+
 func ServerAcceptServer(serverId int, url string) string {
 	serverIdStr := strconv.Itoa(serverId)
 	serverIdLength := len(serverIdStr)

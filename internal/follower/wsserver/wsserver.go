@@ -107,8 +107,8 @@ func (ws *WSServer) Run() {
 				ws.Clients.Delete(client.username)
 			}
 		case from := <-ws.TCPfrom:
-			fmt.Println("BROADCASTING IN WS", from)
-			// ws.broadcast <- from
+			fmt.Println("BROADCASTING TO WS", from)
+			ws.broadcast <- from
 		}
 	}
 }
