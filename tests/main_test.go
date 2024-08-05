@@ -4,6 +4,7 @@ import (
 	"net"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/yoshifrancis/go-gameserver/internal/follower"
@@ -19,7 +20,7 @@ const (
 var upgrader = websocket.Upgrader{}
 
 func TestLeaderInit(t *testing.T) {
-	leader.Leader_init(leaderTcpPort)
+	leader.Leader_init(leaderTcpPort, nil)
 
 	conn, err := net.Dial("tcp", "localhost"+leaderTcpPort)
 	if err != nil {
@@ -47,8 +48,8 @@ func TestLeaderInit(t *testing.T) {
 
 // should be able to connect to leader
 func TestFollowerInit(t *testing.T) {
-	leader.Leader_init(leaderTcpPort)
-	follower.Follower_init(followerWsPort, leaderTcpPort)
+	leader.Leader_init(leaderTcpPort, nil)
+	follower.Follower_init(followerWsPort, leaderTcpPort, nil)
 	var tests = struct {
 		name  string
 		url   string
@@ -88,8 +89,8 @@ func TestFollowerInit(t *testing.T) {
 }
 
 func TestFollowerLogin(t *testing.T) {
-	leader.Leader_init(leaderTcpPort)
-	follower.Follower_init(followerWsPort, leaderTcpPort)
+	leader.Leader_init(leaderTcpPort, nil)
+	follower.Follower_init(followerWsPort, leaderTcpPort, nil)
 	url := "ws://localhost" + followerWsPort
 	type args struct {
 		username string
@@ -153,30 +154,36 @@ func TestFollowerLogin(t *testing.T) {
 
 }
 
-func TestFollowerConnectToLeader(t *testing.T) {
-
-}
-
 func TestLeaderShutdown(t *testing.T) {
+	t.Run("Leader and Follower able to signal they shutdown", func(t *testing.T) {
+		leaderDone := make(chan bool)
+		followerDone := make(chan bool)
+		leader := leader.Leader_init(leaderTcpPort, leaderDone)
+		time.Sleep(time.Second) // ensure that leader gets set up (hopefully)
+		follower.Follower_init(followerWsPort, leaderTcpPort, followerDone)
 
-}
+		go func() {
+			time.Sleep(time.Second * 2)
+			leader.Shutdown()
+		}()
 
-func TestFollowerShutdown(t *testing.T) {
+		timeToShutDown := time.NewTimer(time.Second * 4)
 
-}
+		select {
+		case <-leaderDone:
+			break
+		case <-timeToShutDown.C:
+			t.Fatal("Server did not shutdown within a reasonable amount of time!")
+		}
 
-func TestSendMessage(t *testing.T) {
+		timeToShutDown = time.NewTimer(time.Second * 4)
 
-}
-
-func TestJoinMultipleUsers(t *testing.T) {
-
-}
-
-func TestLeaveUser(t *testing.T) {
-
-}
-
-func TestJoinLobby(t *testing.T) {
+		select {
+		case <-followerDone:
+			break
+		case <-timeToShutDown.C:
+			t.Fatal("Follower did not shutdown within a reasonable amount of time!")
+		}
+	})
 
 }

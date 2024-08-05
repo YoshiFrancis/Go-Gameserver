@@ -42,15 +42,17 @@ type WSServer struct {
 	register   chan *Client
 	TCPfrom    chan []byte
 	TCPto      chan []byte
+	done       chan bool
 	ServerId   string
 }
 
-func NewWSServer() *WSServer {
+func NewWSServer(done chan bool) *WSServer {
 	return &WSServer{
 		Clients:    containers.NewStorage[string, *Client](),
 		broadcast:  make(chan []byte),
 		unregister: make(chan *Client),
 		register:   make(chan *Client),
+		done:       done,
 	}
 }
 
@@ -118,6 +120,9 @@ func (ws *WSServer) Shutdown() {
 	close(ws.broadcast)
 	close(ws.unregister)
 	close(ws.register)
+	if ws.done != nil {
+		ws.done <- true
+	}
 }
 
 func (ws *WSServer) Index(w http.ResponseWriter, r *http.Request) {

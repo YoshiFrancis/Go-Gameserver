@@ -24,10 +24,11 @@ type TCPServer struct {
 	url         string
 	userStorage *containers.Storage[string, rooms.User]
 	roomStorage *containers.Storage[string, rooms.Room]
+	done        chan bool
 	mux         sync.Mutex
 }
 
-func NewTCPServer() *TCPServer {
+func NewTCPServer(done chan bool) *TCPServer {
 	return &TCPServer{
 		lServers:  make(map[string]*ExtenalTCPServer),
 		fServers:  make(map[int]*ExtenalTCPServer),
@@ -36,6 +37,7 @@ func NewTCPServer() *TCPServer {
 		lRequests: make(chan []byte),
 		fRequests: make(chan []byte),
 		idGen:     idGen(),
+		done:      done,
 		mux:       sync.Mutex{},
 	}
 }
@@ -152,4 +154,8 @@ func (s *TCPServer) Shutdown() {
 	close(s.lRequests)
 	close(s.lRegistry)
 	close(s.fRegistry)
+
+	if s.done != nil {
+		s.done <- true
+	}
 }

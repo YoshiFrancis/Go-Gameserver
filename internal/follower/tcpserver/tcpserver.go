@@ -10,27 +10,29 @@ type TCPServer struct {
 	Lfrom      chan []byte
 	WSfrom     chan []byte
 	WSto       chan []byte
+	done       chan bool
 	leaderConn net.Conn
 	ServerId   string
 }
 
-func NewTCPServer(conn net.Conn, serverId string) *TCPServer {
+func NewTCPServer(conn net.Conn, serverId string, done chan bool) *TCPServer {
 	return &TCPServer{
 		Lto:   make(chan []byte),
 		Lfrom: make(chan []byte),
+		done:  done,
 
 		leaderConn: conn,
 		ServerId:   serverId,
 	}
 }
 
-func ConnectToLeader(leaderIp string) *TCPServer {
+func ConnectToLeader(leaderIp string, done chan bool) *TCPServer {
 	conn, err := net.Dial("tcp", leaderIp)
 	if err != nil {
 		fmt.Println("Error connecting to leader: ", err.Error())
 		return nil
 	}
-	return NewTCPServer(conn, "") // hardcoded server id
+	return NewTCPServer(conn, "", done) // hardcoded server id
 }
 
 func (tcp *TCPServer) Run() {
@@ -57,6 +59,9 @@ func (s *TCPServer) Shutdown() {
 	close(s.WSfrom)
 	close(s.WSto)
 	s.leaderConn.Close()
+	if s.done != nil {
+		s.done <- true
+	}
 }
 
 func (s *TCPServer) leaderRead() {

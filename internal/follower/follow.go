@@ -9,15 +9,20 @@ import (
 	"github.com/yoshifrancis/go-gameserver/internal/follower/wsserver"
 )
 
-func Follower_init(wsPort, leaderIp string) {
-	tcp := tcpserver.ConnectToLeader(leaderIp)
+type Follower struct {
+	tcp *tcpserver.TCPServer
+	ws  *wsserver.WSServer
+}
+
+func Follower_init(wsPort, leaderIp string, done chan bool) *Follower {
+	tcp := tcpserver.ConnectToLeader(leaderIp, done)
 	if tcp == nil {
 		fmt.Println("Error connecting to leader")
-		return
+		return &Follower{nil, nil}
 	}
 	fmt.Println("Connected to leader")
 
-	ws := wsserver.NewWSServer()
+	ws := wsserver.NewWSServer(done)
 	link_1 := make(chan []byte)
 	link_2 := make(chan []byte)
 	tcp.WSfrom = link_1
@@ -32,5 +37,7 @@ func Follower_init(wsPort, leaderIp string) {
 	http.HandleFunc("/home", ws.Home)
 	http.HandleFunc("/", ws.Index)
 
-	log.Fatal(http.ListenAndServe(wsPort, nil))
+	go log.Fatal(http.ListenAndServe(wsPort, nil))
+
+	return &Follower{tcp, ws}
 }
