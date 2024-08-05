@@ -1,6 +1,7 @@
 package tests_test
 
 import (
+	"fmt"
 	"net"
 	"strconv"
 	"testing"
@@ -17,39 +18,47 @@ const (
 	followerWsPort = ":8001"
 )
 
-var upgrader = websocket.Upgrader{}
-
 func TestLeaderInit(t *testing.T) {
-	leader.Leader_init(leaderTcpPort, nil)
+	t.Run("Initialize Server and Ping Through TCP", func(t *testing.T) {
+		leader.Leader_init(leaderTcpPort, nil)
 
-	conn, err := net.Dial("tcp", "localhost"+leaderTcpPort)
-	if err != nil {
-		t.Fatalf("Error connecting to the leader! Got the error: %s", err)
-	}
+		conn, err := net.Dial("tcp", "localhost"+leaderTcpPort)
+		if err != nil {
+			t.Fatalf("Error connecting to the leader! Got the error: %s", err)
+		}
 
-	_, err = conn.Write([]byte(messages.Ping()))
-	if err != nil {
-		t.Fatalf("Error pinging the leader! Got the error: %s", err)
-	}
+		_, err = conn.Write([]byte(messages.Ping()))
+		if err != nil {
+			t.Fatalf("Error pinging the leader! Got the error: %s", err)
+		}
 
-	pongBuffer := make([]byte, 24)
+		pongBuffer := make([]byte, 64)
 
-	_, err = conn.Read(pongBuffer)
+		_, err = conn.Read(pongBuffer)
+		fmt.Println("Got leader reply!", string(pongBuffer))
 
-	if err != nil {
-		t.Fatalf("Error receiving pong from the leader! Got the error: %s", err)
-	}
+		if err != nil {
+			t.Fatalf("Error receiving pong from the leader! Got the error: %s", err)
+		}
 
-	if string(pongBuffer) != messages.Pong() {
-		t.Fatalf("Did not receive pong message! Instead received: %s", string(pongBuffer))
-	}
+		flag, pong := messages.Decode(pongBuffer)
+
+		if flag != '!' && pong[0] != "PONG" {
+			t.Fatalf("Did not receive pong message! Instead received: %s%s", string(flag), pong[0])
+		}
+	})
 
 }
 
 // should be able to connect to leader
 func TestFollowerInit(t *testing.T) {
+	fmt.Print("BEGINNING TESTS\n\n\n\n")
+
 	leader.Leader_init(leaderTcpPort, nil)
-	follower.Follower_init(followerWsPort, leaderTcpPort, nil)
+	go follower.Follower_init(followerWsPort, leaderTcpPort, nil)
+
+	fmt.Print("RUNNING TESTS\n\n\n\n")
+
 	var tests = struct {
 		name  string
 		url   string
@@ -57,12 +66,14 @@ func TestFollowerInit(t *testing.T) {
 		want  string
 	}{
 		name:  "Basic ping and pong to follower websocket",
-		url:   "ws://localhost" + followerWsPort,
+		url:   "ws://localhost" + followerWsPort + "/ping",
 		input: messages.Ping(),
 		want:  messages.Pong(),
 	}
+
 	for i := range 10 {
 		t.Run(tests.name, func(t *testing.T) {
+
 			ws, _, err := websocket.DefaultDialer.Dial(tests.url, nil)
 			if err != nil {
 				t.Fatalf("Unable to connect to follower websocket server! Got the error: %s", err)
@@ -74,7 +85,6 @@ func TestFollowerInit(t *testing.T) {
 				return
 			}
 			_, buffer, err := ws.ReadMessage()
-
 			if err != nil {
 				t.Errorf("Error reading pong from websocket server! Got the error: %s", err)
 				return

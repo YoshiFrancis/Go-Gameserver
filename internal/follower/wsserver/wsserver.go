@@ -78,6 +78,8 @@ func (ws *WSServer) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println("Received message, ", string(p))
+
 	var username Username
 	err = json.Unmarshal(p, &username)
 	if err != nil {
@@ -92,6 +94,28 @@ func (ws *WSServer) Home(w http.ResponseWriter, r *http.Request) {
 	ws.TCPto <- []byte(register_msg)
 	hubTemp := renderTemplate(hubTemplate, struct{ Username string }{Username: username.Username})
 	c.send <- hubTemp
+}
+
+func (ws *WSServer) Ping(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("User connected!")
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println("Upgrade error: ", err)
+		return
+	}
+	_, p, err := conn.ReadMessage()
+
+	if err != nil {
+		log.Println("error reading: ", err)
+		return
+	}
+	flag, ping := messages.Decode(p)
+	if flag == '!' && ping[0] == "PING" {
+		err := conn.WriteMessage(websocket.TextMessage, []byte(messages.Pong()))
+		if err != nil {
+			fmt.Println("Error writing pong message: ", err)
+		}
+	}
 }
 
 func (ws *WSServer) Run() {

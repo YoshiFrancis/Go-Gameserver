@@ -15,7 +15,9 @@ type Follower struct {
 }
 
 func Follower_init(wsPort, leaderIp string, done chan bool) *Follower {
+
 	tcp := tcpserver.ConnectToLeader(leaderIp, done)
+	fmt.Println("Listening for WS connections at: ", wsPort)
 	if tcp == nil {
 		fmt.Println("Error connecting to leader")
 		return &Follower{nil, nil}
@@ -35,9 +37,10 @@ func Follower_init(wsPort, leaderIp string, done chan bool) *Follower {
 	go ws.Run()
 
 	http.HandleFunc("/home", ws.Home)
+	http.HandleFunc("/ping", ws.Ping)
 	http.HandleFunc("/", ws.Index)
 
-	go log.Fatal(http.ListenAndServe(wsPort, nil))
+	defer log.Fatal(http.ListenAndServe(wsPort, nil))
 
 	return &Follower{tcp, ws}
 }

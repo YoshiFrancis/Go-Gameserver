@@ -29,10 +29,11 @@ func main() {
 	} else if typing == "F" {
 		fmt.Println("What is the address of the leader you would like to follow?")
 		leaderip := input()
-		follower.Follower_init(":"+port, leaderip, nil)
+		go follower.Follower_init(":"+port, leaderip, nil)
 	}
 
 	for {
+		fmt.Println("HELLOs")
 		user_input := input()
 		if user_input == "exit" {
 			break

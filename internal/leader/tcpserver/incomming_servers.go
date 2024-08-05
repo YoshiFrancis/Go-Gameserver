@@ -3,6 +3,8 @@ package tcpserver
 import (
 	"fmt"
 	"net"
+
+	"github.com/yoshifrancis/go-gameserver/internal/messages"
 )
 
 // TODO
@@ -59,7 +61,13 @@ func (s *ExtenalTCPServer) read() {
 			return
 		}
 
-		if s.class == "F" {
+		flag, decoded := messages.Decode(buffer)
+		fmt.Println("Received: ", decoded)
+		fmt.Println("Received flag: ", string(flag))
+		if flag == '!' && decoded[0] == "PING" {
+			fmt.Println("IN HERE!")
+			s.Send <- []byte(messages.Pong())
+		} else if s.class == "F" {
 			s.main_server.fRequests <- buffer
 		} else {
 			s.main_server.lRequests <- buffer

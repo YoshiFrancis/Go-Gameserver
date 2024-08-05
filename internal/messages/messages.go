@@ -20,7 +20,7 @@ func Decode(req []byte) (flag byte, args []string) {
 	argc := argcByte - '0'
 	args = make([]string, int(argc))
 
-	if flag != '-' && flag != '+' && flag != '/' {
+	if flag != '-' && flag != '+' && flag != '/' && flag != '!' {
 		flag = 'x'
 		return
 	}
@@ -89,12 +89,12 @@ func readSize(r *bytes.Reader) (int, bool) {
 // flag \r\n n arguments \r\n arg[0] \r\n arg[1] ... \r\n arg[n-1] \r\n\r\n
 
 func Ping() string {
-	message := "+PING\r\n\r\n"
+	message := "!1\r\n4\r\nPING\r\n\r\n"
 	return message
 }
 
 func Pong() string {
-	message := "+PONG\r\n\r\n"
+	message := "!1\r\n4\r\nPONG\r\n\r\n"
 	return message
 }
 
