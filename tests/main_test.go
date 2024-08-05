@@ -1,9 +1,9 @@
 package tests_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"net"
-	"strconv"
 	"testing"
 	"time"
 
@@ -100,8 +100,8 @@ func TestFollowerInit(t *testing.T) {
 
 func TestFollowerLogin(t *testing.T) {
 	leader.Leader_init(leaderTcpPort, nil)
-	follower.Follower_init(followerWsPort, leaderTcpPort, nil)
-	url := "ws://localhost" + followerWsPort
+	go follower.Follower_init(followerWsPort, leaderTcpPort, nil)
+	url := "ws://localhost" + followerWsPort + "/home"
 	type args struct {
 		username string
 		message  string
@@ -109,13 +109,12 @@ func TestFollowerLogin(t *testing.T) {
 	var tests = []struct {
 		name  string
 		input args
-		want1 int
-		want2 int
-	}{
-		{name: "First name and sending message", input: args{username: "Yoshi", message: "Is King"}, want1: 200, want2: 200},
-		{name: "Second user and message", input: args{username: "Mario", message: "Is King"}, want1: 200, want2: 200},
-		{name: "Testing Ping", input: args{username: messages.Ping(), message: messages.Ping()}, want1: 202, want2: 202},
-		{name: "Third user and message", input: args{username: "Luigi", message: "Is King"}, want1: 200, want2: 200},
+		want1 string
+	}{ // 34
+		{name: "First name and sending message", input: args{username: "Yoshi", message: "Is King"}, want1: "<div id=\"app\" hx-swap=\"outerHTML\">"},
+		{name: "Second user and message", input: args{username: "Mario", message: "Is King"}, want1: "<div id=\"app\" hx-swap=\"outerHTML\">"},
+		{name: "Testing Ping", input: args{username: messages.Ping(), message: messages.Ping()}, want1: "<div id=\"app\" hx-swap=\"outerHTML\">"},
+		{name: "Third user and message", input: args{username: "Luigi", message: "Is King"}, want1: "<div id=\"app\" hx-swap=\"outerHTML\">"},
 	}
 
 	for _, tt := range tests {
@@ -126,7 +125,18 @@ func TestFollowerLogin(t *testing.T) {
 			}
 			defer ws.Close()
 
-			if err := ws.WriteMessage(websocket.TextMessage, []byte(tt.input.username)); err != nil {
+			_, _, err = ws.ReadMessage() // username prompt buffer
+
+			if err != nil {
+				t.Errorf("Error reading username prompt! Got the error: %s", err)
+			}
+
+			type Username struct {
+				Username string `json:"username"`
+			}
+
+			jsonMsg, _ := json.Marshal(Username{Username: tt.input.username})
+			if err := ws.WriteMessage(websocket.TextMessage, jsonMsg); err != nil {
 				t.Errorf("Error sending username to websocket server! Got the error: %s", err)
 				return
 			}
@@ -137,26 +147,10 @@ func TestFollowerLogin(t *testing.T) {
 				return
 			}
 
-			status, _ := strconv.Atoi(string(buffer))
-			if status != tt.want1 {
-				t.Errorf("Incorrect status after sending username. Got %d / Expected %d", status, tt.want1)
-				return
-			}
+			fmt.Println("Received: ", string(buffer))
 
-			if err := ws.WriteMessage(websocket.TextMessage, []byte(tt.input.message)); err != nil {
-				t.Errorf("Error sending message websocket server! Got the error: %s", err)
-				return
-			}
-			_, buffer, err = ws.ReadMessage()
-
-			if err != nil {
-				t.Errorf("Error status after sending message! Got the error: %s", err)
-				return
-			}
-
-			status, _ = strconv.Atoi(string(buffer))
-			if status != tt.want2 {
-				t.Errorf("Incorrect status after sending message. Got %d / Expected %d", status, tt.want2)
+			if string(buffer[:34]) != tt.want1 {
+				t.Errorf("Incorrect status after sending username. Got %s / Expected %s", string(buffer[:34]), tt.want1)
 				return
 			}
 		})

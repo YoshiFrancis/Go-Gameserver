@@ -61,6 +61,7 @@ type Username struct {
 }
 
 func (ws *WSServer) Home(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Someone connected to home!!!")
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("Upgrade error: ", err)
@@ -78,16 +79,12 @@ func (ws *WSServer) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("Received message, ", string(p))
-
 	var username Username
 	err = json.Unmarshal(p, &username)
 	if err != nil {
 		log.Println("Error unmarshalling JSON:", err)
 		return
 	}
-
-	fmt.Println(username.Username)
 
 	c := NewClient(username.Username, conn, ws)
 	register_msg := messages.ServerJoinUser(username.Username, -1)
@@ -97,7 +94,6 @@ func (ws *WSServer) Home(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ws *WSServer) Ping(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("User connected!")
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("Upgrade error: ", err)
