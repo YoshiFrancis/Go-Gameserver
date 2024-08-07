@@ -32,11 +32,13 @@ func (l *Lobby) Leave(user User) {
 	l.prevRoom.Join(user)
 }
 
-func (l *Lobby) DeliverAll(message string) {
+func (l *Lobby) Broadcast(sender, message string) string {
 	for user := range l.users.Values() {
 		// --------------------------- send user message ---------------------------
 		fmt.Println("Message for ", user)
 	}
+
+	return ""
 }
 
 func (l *Lobby) HandleMessage(message string, sender string) {

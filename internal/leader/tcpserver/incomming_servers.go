@@ -3,6 +3,7 @@ package tcpserver
 import (
 	"fmt"
 	"net"
+	"strings"
 
 	"github.com/yoshifrancis/go-gameserver/internal/messages"
 )
@@ -11,6 +12,12 @@ import (
 // adjust file to accomodate changes to TCPServer class
 // also make struct to encapsulate how to swend messages to leaders and followers
 // so creation of LeaderMessage and FollowerMessage (or perhaps just a Message)
+
+type Request struct {
+	flag   byte
+	args   []string
+	server *ExtenalTCPServer
+}
 
 type ExtenalTCPServer struct {
 	main_server *TCPServer
@@ -57,18 +64,23 @@ func (s *ExtenalTCPServer) read() {
 		_, err := s.conn.Read(buffer)
 		if err != nil {
 			fmt.Println("Erorr while reading", err.Error())
-			s.Shutdown <- true
-			return
+			if s.Shutdown != nil {
+				return
+			}
+		}
+		flag, decoded := messages.Decode(buffer)
+		decoded[0] = strings.ToLower(decoded[0])
+
+		new_req := Request{
+			flag:   flag,
+			args:   decoded,
+			server: s,
 		}
 
-		flag, decoded := messages.Decode(buffer)
-		fmt.Println("Received: ", decoded)
-		fmt.Println("Received flag: ", string(flag))
-		if flag == '!' && decoded[0] == "PING" {
-			fmt.Println("IN HERE!")
+		if flag == '!' && decoded[0] == "ping" {
 			s.Send <- []byte(messages.Pong())
 		} else if s.class == "F" {
-			s.main_server.fRequests <- buffer
+			s.main_server.fRequests <- new_req
 		} else {
 			s.main_server.lRequests <- buffer
 		}
@@ -77,7 +89,8 @@ func (s *ExtenalTCPServer) read() {
 }
 
 func (s *ExtenalTCPServer) close() {
-	fmt.Println("Follower server is closing down")
+
+	fmt.Println("Follower server is closing down in leader")
 	close(s.Send)
 	close(s.Shutdown)
 	if s.class == "F" {

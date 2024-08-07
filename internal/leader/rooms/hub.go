@@ -1,15 +1,19 @@
 package rooms
 
 import (
-	"fmt"
-
 	"github.com/yoshifrancis/go-gameserver/internal/containers"
 )
+
+type Message struct {
+	username string
+	text     string
+}
 
 type Hub struct {
 	users    *containers.Storage[string, User]
 	roomId   int
 	registry chan User
+	msgHist  *containers.Queue[Message]
 }
 
 func NewHub(id int) *Hub {
@@ -17,6 +21,7 @@ func NewHub(id int) *Hub {
 		users:    containers.NewStorage[string, User](),
 		roomId:   id,
 		registry: make(chan User, 8),
+		msgHist:  &containers.Queue[Message]{},
 	}
 }
 
@@ -29,15 +34,9 @@ func (h *Hub) Leave(user User) {
 	h.users.Delete(user.username)
 }
 
-func (h *Hub) DeliverAll(message string) {
-	for user := range h.users.Values() {
-		// --------------------------- send user message ---------------------------
-		fmt.Println("Message for ", user)
-	}
-}
-
-func (h *Hub) HandleMessage(message string, sender string) {
-	// --------------------------- hub handle message ---------------------------
+func (h *Hub) Broadcast(sender, message string) string {
+	h.msgHist.Enqueue(Message{sender, message})
+	return h.getHTMXMessages()
 }
 
 func (h *Hub) GetInfo() string {
@@ -45,6 +44,19 @@ func (h *Hub) GetInfo() string {
 	return "This is the hub. This is the default area where all users are sent to on joining."
 }
 
+func (h *Hub) GetId() int {
+	return h.roomId
+}
+
 func (h *Hub) getUserStorage() *containers.Storage[string, User] {
 	return h.users
+}
+
+func (h *Hub) getHTMXMessages() string {
+	messages := h.msgHist.Items()
+	htmx := "<ul>"
+	for _, message := range messages {
+		htmx += "<li>" + message.username + ": " + message.text + "<\\li>"
+	}
+	return htmx
 }

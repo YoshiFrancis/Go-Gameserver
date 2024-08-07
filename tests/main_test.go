@@ -110,7 +110,7 @@ func TestFollowerLogin(t *testing.T) {
 		name  string
 		input args
 		want1 string
-	}{ // 34
+	}{
 		{name: "First name and sending message", input: args{username: "Yoshi", message: "Is King"}, want1: "<div id=\"app\" hx-swap=\"outerHTML\">"},
 		{name: "Second user and message", input: args{username: "Mario", message: "Is King"}, want1: "<div id=\"app\" hx-swap=\"outerHTML\">"},
 		{name: "Testing Ping", input: args{username: messages.Ping(), message: messages.Ping()}, want1: "<div id=\"app\" hx-swap=\"outerHTML\">"},
@@ -147,8 +147,6 @@ func TestFollowerLogin(t *testing.T) {
 				return
 			}
 
-			fmt.Println("Received: ", string(buffer))
-
 			if string(buffer[:34]) != tt.want1 {
 				t.Errorf("Incorrect status after sending username. Got %s / Expected %s", string(buffer[:34]), tt.want1)
 				return
@@ -163,8 +161,7 @@ func TestLeaderShutdown(t *testing.T) {
 		leaderDone := make(chan bool)
 		followerDone := make(chan bool)
 		leader := leader.Leader_init(leaderTcpPort, leaderDone)
-		time.Sleep(time.Second) // ensure that leader gets set up (hopefully)
-		follower.Follower_init(followerWsPort, leaderTcpPort, followerDone)
+		go follower.Follower_init(followerWsPort, leaderTcpPort, followerDone)
 
 		go func() {
 			time.Sleep(time.Second * 2)
@@ -179,9 +176,8 @@ func TestLeaderShutdown(t *testing.T) {
 		case <-timeToShutDown.C:
 			t.Fatal("Server did not shutdown within a reasonable amount of time!")
 		}
-
+		fmt.Println("Leader finished!")
 		timeToShutDown = time.NewTimer(time.Second * 4)
-
 		select {
 		case <-followerDone:
 			break

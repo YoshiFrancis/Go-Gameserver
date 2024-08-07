@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/yoshifrancis/go-gameserver/internal/containers"
 	"github.com/yoshifrancis/go-gameserver/internal/leader/rooms"
@@ -19,27 +20,31 @@ type TCPServer struct {
 	lRegistry   chan *ExtenalTCPServer
 	fRegistry   chan *ExtenalTCPServer
 	lRequests   chan []byte
-	fRequests   chan []byte
+	fRequests   chan Request
 	idGen       func() int
 	url         string
-	userStorage *containers.Storage[string, rooms.User]
-	roomStorage *containers.Storage[string, rooms.Room]
+	userStorage *containers.Storage[string, rooms.User] // username, User struct
+	roomStorage *containers.Storage[int, rooms.Room]    // roomId, room
 	done        chan bool
+	hub         rooms.Hub
 	mux         sync.Mutex
 }
 
 func NewTCPServer(done chan bool) *TCPServer {
-	return &TCPServer{
+	new_server := &TCPServer{
 		lServers:  make(map[string]*ExtenalTCPServer),
 		fServers:  make(map[int]*ExtenalTCPServer),
 		lRegistry: make(chan *ExtenalTCPServer),
 		fRegistry: make(chan *ExtenalTCPServer),
 		lRequests: make(chan []byte),
-		fRequests: make(chan []byte),
+		fRequests: make(chan Request),
 		idGen:     idGen(),
 		done:      done,
+		hub:       *rooms.NewHub(1),
 		mux:       sync.Mutex{},
 	}
+	new_server.roomStorage.Set(1, &new_server.hub)
+	return new_server
 }
 
 func (s *TCPServer) Run(tcpPort string) {
@@ -83,8 +88,8 @@ func (s *TCPServer) Run(tcpPort string) {
 			fmt.Println("Request from another leader: ", decoded)
 			// handle leader requests
 		case fReq := <-s.fRequests:
-			_, decoded := messages.Decode(fReq)
-			fmt.Println("Request from a follower: ", decoded)
+			s.handleFollowerRequest(fReq)
+
 			// handle request from follower
 		}
 	}
@@ -141,7 +146,7 @@ func idGen() func() int {
 // remove all followers
 // tell all leaders (for later)
 func (s *TCPServer) Shutdown() {
-	fmt.Println("tcpserver shutting down")
+	fmt.Println("leader tcpserver shutting down")
 	for _, l := range s.lServers {
 		l.Shutdown <- true
 	}
@@ -150,12 +155,30 @@ func (s *TCPServer) Shutdown() {
 		f.Shutdown <- true
 	}
 
-	close(s.fRequests)
-	close(s.lRequests)
-	close(s.lRegistry)
-	close(s.fRegistry)
+	waiting_for_shutdowns := time.NewTicker(500 * time.Millisecond)
 
-	if s.done != nil {
-		s.done <- true
+	for {
+		select {
+		case <-waiting_for_shutdowns.C:
+			if len(s.lServers) == 0 && len(s.fServers) == 0 {
+				fmt.Println("leader shutting down reugquests and registries")
+				close(s.fRequests)
+				close(s.lRequests)
+				close(s.lRegistry)
+				close(s.fRegistry)
+
+				if s.done != nil {
+					s.done <- true
+				}
+				return
+			}
+		}
+	}
+
+}
+
+func (s *TCPServer) fbroadcast(message string) {
+	for _, server := range s.fServers {
+		server.Send <- []byte(message)
 	}
 }
