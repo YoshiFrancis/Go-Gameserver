@@ -1,6 +1,9 @@
 package containers
 
-import "sync"
+import (
+	"fmt"
+	"sync"
+)
 
 type Queue[T any] struct {
 	maxSize int
@@ -33,8 +36,9 @@ func (q *Queue[T]) Dequeue() T {
 func (q *Queue[T]) Enqueue(item T) {
 	q.mux.Lock()
 	defer q.mux.Unlock()
+	fmt.Println(len(q.data), " == ", q.maxSize)
 	if len(q.data) == q.maxSize {
-		q.Dequeue()
+		q.data = q.data[1:] // dequeuing. I did not call Dequeue due to me having to unlocking mux then relock afterward
 	}
 	q.data = append(q.data, item)
 }
