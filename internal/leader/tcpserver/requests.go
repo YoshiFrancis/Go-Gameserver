@@ -27,9 +27,7 @@ func (s *TCPServer) handleFollowerRequest(req Request) {
 		if !ok {
 			return
 		}
-		fmt.Println("Preparing")
 		broadcastMsg := room.Broadcast(args[2], args[3])
-		fmt.Println(broadcastMsg)
 		s.fbroadcast(broadcastMsg)
 	case "join":
 		fmt.Println("Joining user to room")
@@ -49,5 +47,15 @@ func (s *TCPServer) handleFollowerRequest(req Request) {
 		}
 
 		new_room.Join(user)
+	case "lobby":
+		creatorUsername := args[1]
+		lobbyTitle := args[2]
+		new_lobby := rooms.NewLobby(s.idGen(), s.hub, lobbyTitle)
+		user, ok := s.userStorage.Get(creatorUsername)
+		if ok {
+			new_lobby.Join(user)
+		}
+		broadcastMsg := s.hub.Broadcast("Server", lobbyTitle+" lobby created by "+creatorUsername)
+		s.fbroadcast(broadcastMsg)
 	}
 }

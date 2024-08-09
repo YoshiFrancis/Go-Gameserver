@@ -65,3 +65,7 @@ func (h *Hub) getHTMXMessages() string {
 	htmx += "</ul></div>"
 	return htmx
 }
+
+func (h *Hub) GetName() string {
+	return "Hub"
+}

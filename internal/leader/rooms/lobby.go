@@ -11,14 +11,16 @@ type Lobby struct {
 	roomId   int
 	registry chan User
 	prevRoom Room
+	title    string
 }
 
-func NewLobby(id int, prevRoom Room) *Lobby {
+func NewLobby(id int, prevRoom Room, title string) *Lobby {
 	return &Lobby{
 		users:    containers.NewStorage[string, User](),
 		roomId:   id,
 		registry: make(chan User, 8),
 		prevRoom: prevRoom,
+		title:    title,
 	}
 }
 
@@ -52,4 +54,8 @@ func (l *Lobby) GetInfo() string {
 
 func (l *Lobby) getUserStorage() *containers.Storage[string, User] {
 	return l.users
+}
+
+func (l *Lobby) GetName() string {
+	return l.title
 }

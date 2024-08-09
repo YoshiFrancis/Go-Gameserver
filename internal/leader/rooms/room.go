@@ -8,4 +8,5 @@ type Room interface {
 	Broadcast(sender, message string) string
 	GetInfo() string
 	getUserStorage() *containers.Storage[string, User]
+	GetName() string
 }
