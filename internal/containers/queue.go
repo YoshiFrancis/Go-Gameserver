@@ -11,7 +11,7 @@ type Queue[T any] struct {
 func NewQueue[T any](maxSize int) *Queue[T] {
 	return &Queue[T]{
 		maxSize: maxSize,
-		data:    make([]T, maxSize),
+		data:    make([]T, 0),
 		mux:     sync.Mutex{},
 	}
 }

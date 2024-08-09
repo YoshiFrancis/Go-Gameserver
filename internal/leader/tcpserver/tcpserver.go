@@ -26,24 +26,26 @@ type TCPServer struct {
 	userStorage *containers.Storage[string, rooms.User] // username, User struct
 	roomStorage *containers.Storage[int, rooms.Room]    // roomId, room
 	done        chan bool
-	hub         rooms.Hub
+	hub         *rooms.Hub
 	mux         sync.Mutex
 }
 
 func NewTCPServer(done chan bool) *TCPServer {
 	new_server := &TCPServer{
-		lServers:  make(map[string]*ExtenalTCPServer),
-		fServers:  make(map[int]*ExtenalTCPServer),
-		lRegistry: make(chan *ExtenalTCPServer),
-		fRegistry: make(chan *ExtenalTCPServer),
-		lRequests: make(chan []byte),
-		fRequests: make(chan Request),
-		idGen:     idGen(),
-		done:      done,
-		hub:       *rooms.NewHub(1),
-		mux:       sync.Mutex{},
+		lServers:    make(map[string]*ExtenalTCPServer),
+		fServers:    make(map[int]*ExtenalTCPServer),
+		lRegistry:   make(chan *ExtenalTCPServer),
+		fRegistry:   make(chan *ExtenalTCPServer),
+		lRequests:   make(chan []byte),
+		fRequests:   make(chan Request),
+		idGen:       idGen(),
+		userStorage: containers.NewStorage[string, rooms.User](),
+		roomStorage: containers.NewStorage[int, rooms.Room](),
+		done:        done,
+		hub:         rooms.NewHub(1),
+		mux:         sync.Mutex{},
 	}
-	new_server.roomStorage.Set(1, &new_server.hub)
+	new_server.roomStorage.Set(1, new_server.hub)
 	return new_server
 }
 
@@ -88,6 +90,7 @@ func (s *TCPServer) Run(tcpPort string) {
 			fmt.Println("Request from another leader: ", decoded)
 			// handle leader requests
 		case fReq := <-s.fRequests:
+			fmt.Println("New request from follower: ", fReq)
 			s.handleFollowerRequest(fReq)
 
 			// handle request from follower
@@ -178,7 +181,9 @@ func (s *TCPServer) Shutdown() {
 }
 
 func (s *TCPServer) fbroadcast(message string) {
+	fmt.Println("BROADCASTING")
 	for _, server := range s.fServers {
 		server.Send <- []byte(message)
 	}
+	fmt.Println("done broadcasting!")
 }

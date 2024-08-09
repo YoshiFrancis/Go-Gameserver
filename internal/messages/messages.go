@@ -162,10 +162,10 @@ func ServerDisconnectUser(username string) string {
 	return message
 }
 
-func ServerJoinUser(username string, serverId int) string {
+func ServerRegisterUser(username string, serverId int) string {
 	serverIdStr := strconv.Itoa(serverId)
 	serverIdLength := len(serverIdStr)
-	message := fmt.Sprintf("-3\r\n4\r\nJOIN\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", serverIdLength, serverIdStr, len(username), username)
+	message := fmt.Sprintf("-3\r\n8\r\nREGISTER\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", serverIdLength, serverIdStr, len(username), username)
 	return message
 }
 

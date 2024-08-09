@@ -1,6 +1,8 @@
 package rooms
 
 import (
+	"fmt"
+
 	"github.com/yoshifrancis/go-gameserver/internal/containers"
 )
 
@@ -21,7 +23,7 @@ func NewHub(id int) *Hub {
 		users:    containers.NewStorage[string, User](),
 		roomId:   id,
 		registry: make(chan User, 8),
-		msgHist:  &containers.Queue[Message]{},
+		msgHist:  containers.NewQueue[Message](20),
 	}
 }
 
@@ -35,7 +37,9 @@ func (h *Hub) Leave(user User) {
 }
 
 func (h *Hub) Broadcast(sender, message string) string {
+	fmt.Println("Enqueuing msg")
 	h.msgHist.Enqueue(Message{sender, message})
+	fmt.Println("Enqueued msg")
 	return h.getHTMXMessages()
 }
 

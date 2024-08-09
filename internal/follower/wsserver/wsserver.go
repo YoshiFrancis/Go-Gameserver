@@ -49,7 +49,7 @@ type WSServer struct {
 func NewWSServer(done chan bool) *WSServer {
 	return &WSServer{
 		Clients:    containers.NewStorage[string, *Client](),
-		broadcast:  make(chan []byte),
+		broadcast:  make(chan []byte, 24),
 		unregister: make(chan *Client),
 		register:   make(chan *Client),
 		done:       done,
@@ -61,7 +61,6 @@ type Username struct {
 }
 
 func (ws *WSServer) Home(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Someone connected to home!!!")
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		log.Println("Upgrade error: ", err)
@@ -86,8 +85,10 @@ func (ws *WSServer) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println("New user: ", username.Username)
+
 	c := NewClient(username.Username, conn, ws)
-	register_msg := messages.ServerJoinUser(username.Username, -1)
+	register_msg := messages.ServerRegisterUser(username.Username, -1)
 	ws.TCPto <- []byte(register_msg)
 	hubTemp := renderTemplate(hubTemplate, struct{ Username string }{Username: username.Username})
 	c.send <- hubTemp
@@ -118,10 +119,14 @@ func (ws *WSServer) Run() {
 	for {
 		select {
 		case msg := <-ws.broadcast:
+			fmt.Println("Received message to briadcast")
 			for _, client := range ws.Clients.Values() {
+				fmt.Println("Sending to ", client.username)
 				client.send <- msg
+				fmt.Println("Done sending to ", client.username)
 			}
 		case client := <-ws.register:
+			fmt.Println("Registering client!", client.username)
 			ws.Clients.Set(client.username, client)
 		case client := <-ws.unregister:
 			if _, ok := ws.Clients.Get(client.username); ok {
@@ -129,8 +134,9 @@ func (ws *WSServer) Run() {
 				ws.Clients.Delete(client.username)
 			}
 		case from := <-ws.TCPfrom:
-			fmt.Println("BROADCASTING TO WS", from)
+			fmt.Println("BROADCASTING TO WS", string(from))
 			ws.broadcast <- from
+			fmt.Println("Done broadcasting")
 		}
 	}
 }

@@ -41,7 +41,9 @@ func (tcp *TCPServer) Run() {
 	for {
 		select {
 		case from := <-tcp.Lfrom: // -------- these two lines somehow cause a bug (cannot switch from username.html to hub.html)
+			fmt.Println("Got message from leader!", from)
 			tcp.WSto <- from
+			fmt.Println("Sent to WS")
 		case from := <-tcp.WSfrom:
 			_, err := tcp.leaderConn.Write(from)
 			if err != nil {

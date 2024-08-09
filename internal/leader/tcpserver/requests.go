@@ -1,6 +1,7 @@
 package tcpserver
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 
@@ -8,12 +9,15 @@ import (
 )
 
 func (s *TCPServer) handleFollowerRequest(req Request) {
+	fmt.Println("New request!")
 	args := req.args
 
 	switch args[0] {
 	case "register":
-		s.userStorage.Set(args[2], *rooms.NewUser(args[2], &s.hub))
+		fmt.Println("Registering user")
+		s.userStorage.Set(args[2], *rooms.NewUser(args[2], s.hub))
 	case "broadcast":
+		fmt.Println("Broadcasting message to users room")
 		roomId, err := strconv.Atoi(args[1])
 		if err != nil {
 			log.Println(err)
@@ -23,9 +27,12 @@ func (s *TCPServer) handleFollowerRequest(req Request) {
 		if !ok {
 			return
 		}
+		fmt.Println("Preparing")
 		broadcastMsg := room.Broadcast(args[2], args[3])
+		fmt.Println(broadcastMsg)
 		s.fbroadcast(broadcastMsg)
 	case "join":
+		fmt.Println("Joining user to room")
 		roomId, err := strconv.Atoi(args[1])
 		if err != nil {
 			log.Println(err)
