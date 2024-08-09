@@ -23,12 +23,18 @@ func (s *TCPServer) handleFollowerRequest(req Request) {
 			log.Println(err)
 			return
 		}
-		room, ok := s.roomStorage.Get(roomId)
-		if !ok {
-			return
+		if roomId == -1 {
+			roomId = 1
 		}
-		broadcastMsg := room.Broadcast(args[2], args[3])
-		s.fbroadcast(broadcastMsg)
+
+		if room, ok := s.roomStorage.Get(roomId); !ok {
+			fmt.Println("Not found roomId: ", roomId)
+			return
+		} else {
+			broadcastMsg := room.Broadcast(args[2], args[3])
+			fmt.Println("Broadcast msg: ", broadcastMsg)
+			s.fbroadcast(broadcastMsg)
+		}
 	case "join":
 		roomId, err := strconv.Atoi(args[1])
 		if err != nil {
