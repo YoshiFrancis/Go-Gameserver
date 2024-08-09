@@ -62,5 +62,6 @@ func (h *Hub) getHTMXMessages() string {
 	for _, message := range messages {
 		htmx += "<li>" + message.username + ": " + message.text + "<\\li>"
 	}
+	htmx += "<\\ul>"
 	return htmx
 }

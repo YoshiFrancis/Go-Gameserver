@@ -9,6 +9,10 @@ import (
 )
 
 func (c *Client) handleCommand(message string) (request_msg string) {
+	if message[0] != '/' {
+		request_msg = messages.HubBroadcast(c.username, 1, message)
+		return
+	}
 	split_msg := strings.Split(message, " ")
 	split_msg[0] = strings.ToLower(split_msg[0])
 	if split_msg[0] == "/echo" {
@@ -23,8 +27,6 @@ func (c *Client) handleCommand(message string) (request_msg string) {
 		request_msg = messages.LobbyJoinUser(c.username, roomId)
 
 	} else if split_msg[0] == "/create" {
-
-		// roomTitle := split_msg[1]
 		request_msg = messages.HubCreateLobby("ws", -1)
 	} else if split_msg[0] == "/leave" {
 		request_msg = messages.ServerDisconnectUser(c.username)
@@ -35,7 +37,7 @@ func (c *Client) handleCommand(message string) (request_msg string) {
 	} else if split_msg[0] == "/hub" {
 		request_msg = messages.HubJoinUser(c.username, -1)
 	} else {
-		request_msg = messages.HubBroadcast(c.username, 1, split_msg[0])
+		request_msg = ""
 	}
 	return
 }

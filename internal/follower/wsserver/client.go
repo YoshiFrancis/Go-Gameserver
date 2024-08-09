@@ -46,7 +46,9 @@ func (c *Client) read() {
 		}
 		var message Message
 		json.Unmarshal(jsonMessage, &message)
+		fmt.Println("Received message: ", message.Message)
 		handled := []byte(c.handleCommand(string(message.Message)))
+		fmt.Println("Handled message: ", string(handled))
 		c.ws.TCPto <- handled
 	}
 }
