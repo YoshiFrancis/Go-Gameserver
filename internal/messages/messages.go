@@ -169,38 +169,22 @@ func ServerRegisterUser(username string, serverId int) string {
 	return message
 }
 
-func HubBroadcast(username string, roomId int, broadcast string) string {
+func RoomBroadcast(username string, roomId int, broadcast string) string {
 	roomIdStr := strconv.Itoa(roomId)
 	roomIdLength := len(roomIdStr)
 	message := fmt.Sprintf("+4\r\n9\r\nBROADCAST\r\n%d\r\n%s\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", roomIdLength, roomIdStr, len(username), username, len(broadcast), broadcast)
 	return message
 }
 
-func HubJoinUser(username string, roomId int) string {
+func RoomJoinUser(username string, roomId int) string {
 	roomIdStr := strconv.Itoa(roomId)
 	roomIdLength := len(roomIdStr)
 	message := fmt.Sprintf("+3\r\n4\r\nJOIN\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", roomIdLength, roomIdStr, len(username), username)
 	return message
 }
 
-func LobbyJoinUser(username string, roomId int) string {
-	roomIdStr := strconv.Itoa(roomId)
-	roomIdLength := len(roomIdStr)
-	message := fmt.Sprintf("/3\r\n4\r\nJOIN\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", roomIdLength, roomIdStr, len(username), username)
-	return message
-}
-
-func LobbyBroadcast(username string, roomId int, broadcast string) string {
-	roomIdStr := strconv.Itoa(roomId)
-	roomIdLength := len(roomIdStr)
-	message := fmt.Sprintf("/4\r\n9\r\nBROADCAST\r\n%d\r\n%s\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", roomIdLength, roomIdStr, len(username), username, len(broadcast), broadcast)
-	return message
-}
-
-func HubCreateLobby(lobbyTitle string, roomId int) string {
-	roomIdStr := strconv.Itoa(roomId)
-	roomIdLength := len(roomIdStr)
-	message := fmt.Sprintf("+3\r\n5\r\nLOBBY\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", roomIdLength, roomIdStr, len(lobbyTitle), lobbyTitle)
+func CreateLobby(lobbyTitle, username string) string {
+	message := fmt.Sprintf("+3\r\n5\r\nLOBBY\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", len(username), username, len(lobbyTitle), lobbyTitle)
 	return message
 }
 

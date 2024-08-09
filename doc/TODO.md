@@ -4,9 +4,9 @@
 5. Communicate between servers for broadcasting and keeping track of rooms -- DONE
 
 
-1. Configure method to send all the server data to a newly connected server
-2. Test out server
-3. Make sure the leader is only handling rooms and mawnaging user data
+1. Configure method to send all the server data to a newly connected server -- ENDGAME
+2. Test out server -- DONE
+3. Make sure the leader is only handling rooms and mawnaging user data -- DONE
 4. Better api to interact with web socket server
 5. Learn how to communicate witht he C++ terminal game server
 6. Implement Redis cache to store past messages and past users
