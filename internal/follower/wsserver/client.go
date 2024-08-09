@@ -60,6 +60,7 @@ func (c *Client) write() {
 	}()
 
 	for message := range c.send {
+		fmt.Println(c.username, " recieved message: ", string(message))
 		w, err := c.conn.NextWriter(websocket.TextMessage)
 		if err != nil {
 			return

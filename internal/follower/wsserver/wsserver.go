@@ -119,11 +119,8 @@ func (ws *WSServer) Run() {
 	for {
 		select {
 		case msg := <-ws.broadcast:
-			fmt.Println("Received message to briadcast")
 			for _, client := range ws.Clients.Values() {
-				fmt.Println("Sending to ", client.username)
 				client.send <- msg
-				fmt.Println("Done sending to ", client.username)
 			}
 		case client := <-ws.register:
 			fmt.Println("Registering client!", client.username)
@@ -134,9 +131,7 @@ func (ws *WSServer) Run() {
 				ws.Clients.Delete(client.username)
 			}
 		case from := <-ws.TCPfrom:
-			fmt.Println("BROADCASTING TO WS", string(from))
 			ws.broadcast <- from
-			fmt.Println("Done broadcasting")
 		}
 	}
 }

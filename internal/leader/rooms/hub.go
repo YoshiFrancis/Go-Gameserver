@@ -58,10 +58,10 @@ func (h *Hub) getUserStorage() *containers.Storage[string, User] {
 
 func (h *Hub) getHTMXMessages() string {
 	messages := h.msgHist.Items()
-	htmx := "<ul>"
+	htmx := "<div id=\"chat-room\" hx-swap=\"outerHTML\"><ul>"
 	for _, message := range messages {
-		htmx += "<li>" + message.username + ": " + message.text + "<\\li>"
+		htmx += "<li>" + message.username + ": " + message.text + "</li>"
 	}
-	htmx += "<\\ul>"
+	htmx += "</ul></div>"
 	return htmx
 }
