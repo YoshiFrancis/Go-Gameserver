@@ -98,6 +98,15 @@ func Pong() string {
 	return message
 }
 
+func listUsernames(usernames []string) string {
+	list := usernames[0]
+	for _, username := range usernames[1:] {
+		list += "\n" + username
+	}
+
+	return list
+}
+
 func ServerAcceptServer(serverId int, url string) string {
 	serverIdStr := strconv.Itoa(serverId)
 	serverIdLength := len(serverIdStr)

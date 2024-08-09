@@ -1,10 +1,16 @@
 package rooms
 
 import (
-	"fmt"
+	"html/template"
 
 	"github.com/yoshifrancis/go-gameserver/internal/containers"
 )
+
+var lobbyTemplate *template.Template
+
+func init() {
+	lobbyTemplate = template.Must(template.ParseFiles("../internal/templates/lobby.html"))
+}
 
 type Lobby struct {
 	users    *containers.Storage[string, User]
@@ -12,21 +18,34 @@ type Lobby struct {
 	registry chan User
 	prevRoom Room
 	title    string
+	msgHist  *containers.Queue[Message]
+	creator  string
 }
 
-func NewLobby(id int, prevRoom Room, title string) *Lobby {
+func NewLobby(id int, prevRoom Room, title, creator string) *Lobby {
 	return &Lobby{
 		users:    containers.NewStorage[string, User](),
 		roomId:   id,
 		registry: make(chan User, 8),
 		prevRoom: prevRoom,
 		title:    title,
+		msgHist:  containers.NewQueue[Message](20),
+		creator:  creator,
 	}
 }
 
-func (l *Lobby) Join(user User) {
+func (l *Lobby) Join(user User) []byte {
 	user.room.Leave(user)
 	l.users.Set(user.username, user)
+	return containers.RenderTemplate(lobbyTemplate, struct {
+		LobbyTitle      string
+		Username        string
+		CreatorUsername string
+	}{
+		LobbyTitle:      l.title,
+		Username:        user.username,
+		CreatorUsername: l.creator,
+	})
 }
 
 func (l *Lobby) Leave(user User) {
@@ -35,12 +54,8 @@ func (l *Lobby) Leave(user User) {
 }
 
 func (l *Lobby) Broadcast(sender, message string) string {
-	for user := range l.users.Values() {
-		// --------------------------- send user message ---------------------------
-		fmt.Println("Message for ", user)
-	}
-
-	return ""
+	l.msgHist.Enqueue(Message{sender, message})
+	return l.getHTMXMessages()
 }
 
 func (l *Lobby) HandleMessage(message string, sender string) {
@@ -52,10 +67,16 @@ func (l *Lobby) GetInfo() string {
 	return "This is the lobby."
 }
 
-func (l *Lobby) getUserStorage() *containers.Storage[string, User] {
-	return l.users
-}
-
 func (l *Lobby) GetName() string {
 	return l.title
+}
+
+func (l *Lobby) getHTMXMessages() string {
+	messages := l.msgHist.Items()
+	htmx := "<div id=\"chat-room\" hx-swap=\"outerHTML\"><ul>"
+	for _, message := range messages {
+		htmx += "<li>" + message.username + ": " + message.text + "</li>"
+	}
+	htmx += "</ul></div>"
+	return htmx
 }

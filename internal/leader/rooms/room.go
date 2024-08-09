@@ -1,12 +1,14 @@
 package rooms
 
-import "github.com/yoshifrancis/go-gameserver/internal/containers"
-
 type Room interface {
-	Join(user User)
+	Join(user User) []byte
 	Leave(user User)
 	Broadcast(sender, message string) string
 	GetInfo() string
-	getUserStorage() *containers.Storage[string, User]
 	GetName() string
+}
+
+type Message struct {
+	username string
+	text     string
 }

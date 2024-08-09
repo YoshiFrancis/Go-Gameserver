@@ -67,7 +67,7 @@ func (ws *WSServer) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	promptUsernameTemp := renderTemplate(usernameTemplate, struct{}{})
+	promptUsernameTemp := containers.RenderTemplate(usernameTemplate, struct{}{})
 	conn.WriteMessage(websocket.TextMessage, promptUsernameTemp)
 
 	// Read message from browser
@@ -90,7 +90,7 @@ func (ws *WSServer) Home(w http.ResponseWriter, r *http.Request) {
 	c := NewClient(username.Username, conn, ws)
 	register_msg := messages.ServerRegisterUser(username.Username, -1)
 	ws.TCPto <- []byte(register_msg)
-	hubTemp := renderTemplate(hubTemplate, struct{ Username string }{Username: username.Username})
+	hubTemp := containers.RenderTemplate(hubTemplate, struct{ Username string }{Username: username.Username})
 	c.send <- hubTemp
 }
 

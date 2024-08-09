@@ -30,7 +30,6 @@ func (s *TCPServer) handleFollowerRequest(req Request) {
 		broadcastMsg := room.Broadcast(args[2], args[3])
 		s.fbroadcast(broadcastMsg)
 	case "join":
-		fmt.Println("Joining user to room")
 		roomId, err := strconv.Atoi(args[1])
 		if err != nil {
 			log.Println(err)
@@ -50,7 +49,7 @@ func (s *TCPServer) handleFollowerRequest(req Request) {
 	case "lobby":
 		creatorUsername := args[1]
 		lobbyTitle := args[2]
-		new_lobby := rooms.NewLobby(s.idGen(), s.hub, lobbyTitle)
+		new_lobby := rooms.NewLobby(s.idGen(), s.hub, lobbyTitle, creatorUsername)
 		user, ok := s.userStorage.Get(creatorUsername)
 		if ok {
 			new_lobby.Join(user)

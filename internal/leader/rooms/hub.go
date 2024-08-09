@@ -1,14 +1,15 @@
 package rooms
 
 import (
-	"fmt"
+	"html/template"
 
 	"github.com/yoshifrancis/go-gameserver/internal/containers"
 )
 
-type Message struct {
-	username string
-	text     string
+var hubTemplate *template.Template
+
+func init() {
+	hubTemplate = template.Must(template.ParseFiles("../internal/templates/hub.html"))
 }
 
 type Hub struct {
@@ -27,9 +28,10 @@ func NewHub(id int) *Hub {
 	}
 }
 
-func (h *Hub) Join(user User) {
+func (h *Hub) Join(user User) []byte {
 	user.room.Leave(user)
 	h.users.Set(user.username, user)
+	return containers.RenderTemplate(hubTemplate, struct{ Username string }{Username: user.username})
 }
 
 func (h *Hub) Leave(user User) {
@@ -37,9 +39,7 @@ func (h *Hub) Leave(user User) {
 }
 
 func (h *Hub) Broadcast(sender, message string) string {
-	fmt.Println("Enqueuing msg")
 	h.msgHist.Enqueue(Message{sender, message})
-	fmt.Println("Enqueued msg")
 	return h.getHTMXMessages()
 }
 
@@ -50,10 +50,6 @@ func (h *Hub) GetInfo() string {
 
 func (h *Hub) GetId() int {
 	return h.roomId
-}
-
-func (h *Hub) getUserStorage() *containers.Storage[string, User] {
-	return h.users
 }
 
 func (h *Hub) getHTMXMessages() string {
