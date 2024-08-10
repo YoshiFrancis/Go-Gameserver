@@ -1,5 +1,5 @@
 <div id="app" hx-swap="outerHTML">
-  <h1>{{ .LobbyTitle }}</h1>
+  <h1>Lobby {{ .LobbyTitle }}</h1>
   <h3>Started by {{ .CreatorUsername }}</h3>
   <div id="participants">
     <ul>
@@ -11,7 +11,7 @@
   <div id="chat-room">
     <ul>
       {{ range .Messages }}
-      <li>{{ .username }}: {{ .text }}</li>
+      <li>{{ .Username }}: {{ .Text }}</li>
       {{ end }}
     </ul>
   </div>

@@ -46,9 +46,9 @@ func (c *Client) read() {
 		}
 		var message Message
 		json.Unmarshal(jsonMessage, &message)
-		fmt.Println("Received message: ", message.Message)
+		// fmt.Println("Received message: ", message.Message)
 		handled := []byte(c.handleCommand(string(message.Message)))
-		fmt.Println("Handled message: ", string(handled))
+		// fmt.Println("Handled message: ", string(handled))
 		c.ws.TCPto <- handled
 	}
 }
@@ -60,7 +60,7 @@ func (c *Client) write() {
 	}()
 
 	for message := range c.send {
-		fmt.Println(c.username, " recieved message: ", string(message))
+		// fmt.Println(c.username, " recieved message: ", string(message))
 		w, err := c.conn.NextWriter(websocket.TextMessage)
 		if err != nil {
 			return

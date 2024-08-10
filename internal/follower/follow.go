@@ -26,7 +26,7 @@ func Follower_init(wsPort, leaderIp string, done chan bool) *Follower {
 
 	ws := wsserver.NewWSServer(done)
 	link_1 := make(chan []byte)
-	link_2 := make(chan []byte)
+	link_2 := make(chan wsserver.LeaderRequest)
 	tcp.WSfrom = link_1
 	ws.TCPto = link_1
 	tcp.WSto = link_2

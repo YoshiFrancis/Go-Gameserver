@@ -14,12 +14,10 @@ import (
 
 var indexTemplate *template.Template
 var usernameTemplate *template.Template
-var hubTemplate *template.Template
 
 func init() {
 	indexTemplate = template.Must(template.ParseFiles("../web/index.html"))
 	usernameTemplate = template.Must(template.ParseFiles("../internal/templates/username.html"))
-	hubTemplate = template.Must(template.ParseFiles("../internal/templates/hub.html"))
 }
 
 var upgrader = websocket.Upgrader{
@@ -40,7 +38,7 @@ type WSServer struct {
 	broadcast  chan LeaderRequest
 	unregister chan *Client
 	register   chan *Client
-	TCPfrom    chan []byte
+	TCPfrom    chan LeaderRequest
 	TCPto      chan []byte
 	done       chan bool
 	ServerId   string
@@ -132,14 +130,8 @@ func (ws *WSServer) Run() {
 				close(client.send)
 				ws.Clients.Delete(client.username)
 			}
-		case from := <-ws.TCPfrom:
-			decoded := messages.LReqDecode(from)
-
-			ws.broadcast <- LeaderRequest{
-				command:   decoded.Command,
-				arg:       decoded.Arg,
-				usernames: decoded.Receivers,
-			}
+		case lReq := <-ws.TCPfrom:
+			ws.broadcast <- lReq
 		}
 	}
 }
@@ -160,5 +152,13 @@ func (ws *WSServer) Index(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to render template", http.StatusInternalServerError)
 		fmt.Println("Error rendering username template:", err)
 		return
+	}
+}
+
+func NewLeaderRequest(command, arg string, usernames []string) LeaderRequest {
+	return LeaderRequest{
+		command:   command,
+		arg:       arg,
+		usernames: usernames,
 	}
 }

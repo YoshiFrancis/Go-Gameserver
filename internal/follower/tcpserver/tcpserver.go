@@ -3,13 +3,16 @@ package tcpserver
 import (
 	"fmt"
 	"net"
+
+	"github.com/yoshifrancis/go-gameserver/internal/follower/wsserver"
+	"github.com/yoshifrancis/go-gameserver/internal/messages"
 )
 
 type TCPServer struct {
 	Lto        chan []byte
-	Lfrom      chan []byte
+	Lfrom      chan wsserver.LeaderRequest
 	WSfrom     chan []byte
-	WSto       chan []byte
+	WSto       chan wsserver.LeaderRequest
 	done       chan bool
 	leaderConn net.Conn
 	ServerId   string
@@ -18,7 +21,7 @@ type TCPServer struct {
 func NewTCPServer(conn net.Conn, serverId string, done chan bool) *TCPServer {
 	return &TCPServer{
 		Lto:   make(chan []byte),
-		Lfrom: make(chan []byte),
+		Lfrom: make(chan wsserver.LeaderRequest, 8),
 		done:  done,
 
 		leaderConn: conn,
@@ -40,9 +43,8 @@ func (tcp *TCPServer) Run() {
 	go tcp.leaderRead()
 	for {
 		select {
-		case from := <-tcp.Lfrom: // -------- these two lines somehow cause a bug (cannot switch from username.html to hub.html)
-			fmt.Println("Message from leader: ", string(from))
-			tcp.WSto <- from
+		case lReq := <-tcp.Lfrom: // -------- these two lines somehow cause a bug (cannot switch from username.html to hub.html)
+			tcp.WSto <- lReq
 		case from := <-tcp.WSfrom:
 			_, err := tcp.leaderConn.Write(from)
 			if err != nil {
@@ -68,11 +70,15 @@ func (s *TCPServer) Shutdown() {
 func (s *TCPServer) leaderRead() {
 	for {
 		buffer := make([]byte, 1024)
-		n, err := s.leaderConn.Read(buffer)
+		_, err := s.leaderConn.Read(buffer)
 		if err != nil {
 			fmt.Println("Error reading from leader: ", err)
 			return
 		}
-		s.Lfrom <- buffer[:n]
+
+		go func() {
+			lReq := messages.LReqDecode(buffer)
+			s.Lfrom <- wsserver.NewLeaderRequest(lReq.Command, lReq.Arg, lReq.Receivers)
+		}()
 	}
 }

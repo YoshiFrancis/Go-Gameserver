@@ -56,7 +56,9 @@ func (s *TCPServer) handleFollowerRequest(req Request) {
 		}
 		new_lobby := rooms.NewLobby(s.idGen(), s.hub, lobbyTitle, creatorUsername)
 		s.roomStorage.Set(lobbyTitle, new_lobby)
-		new_lobby.Join(user)
+		leaveTmpl, joinTmpl := new_lobby.Join(user)
+		s.fbroadcast(user.GetRoom().BroadcastTemplate(string(joinTmpl)))
+		s.fbroadcast(s.hub.BroadcastTemplate(string(leaveTmpl)))
 		broadcastMsg := s.hub.BroadcastMessage("Server", lobbyTitle+" lobby created by "+creatorUsername)
 		s.fbroadcast(broadcastMsg)
 	}
