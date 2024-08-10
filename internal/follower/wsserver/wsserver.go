@@ -88,7 +88,7 @@ func (ws *WSServer) Home(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("New user: ", username.Username)
 
 	c := NewClient(username.Username, conn, ws)
-	register_msg := messages.ServerRegisterUser(username.Username, -1)
+	register_msg := messages.RegisterUser(username.Username, -1)
 	ws.TCPto <- []byte(register_msg)
 	hubTemp := containers.RenderTemplate(hubTemplate, struct{ Username string }{Username: username.Username})
 	c.send <- hubTemp
@@ -106,8 +106,8 @@ func (ws *WSServer) Ping(w http.ResponseWriter, r *http.Request) {
 		log.Println("error reading: ", err)
 		return
 	}
-	flag, ping := messages.Decode(p)
-	if flag == '!' && ping[0] == "PING" {
+	flag, args := messages.Decode(p)
+	if flag == '!' && args[0] == "PING" {
 		err := conn.WriteMessage(websocket.TextMessage, []byte(messages.Pong()))
 		if err != nil {
 			fmt.Println("Error writing pong message: ", err)

@@ -3,6 +3,7 @@ package messages
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"strconv"
 )
 
@@ -13,16 +14,30 @@ merge server
 tell user to join a specific url
 */
 
-func Decode(req []byte) (flag byte, args []string) {
+type FollowerRequest struct {
+	Flag    byte
+	Command string
+	Sender  string
+	Arg     string
+}
+
+type LeaderRequest struct {
+	flag      byte
+	command   string
+	arg       string
+	receivers []string
+}
+
+func Decode(req []byte) (byte, []string) {
+
 	r := bytes.NewReader(req)
-	flag, _ = r.ReadByte() // reading the flag. lowkey dont know what to do with it right now
+	flag, _ := r.ReadByte() // reading the flag. lowkey dont know what to do with it right now
 	argcByte, _ := r.ReadByte()
 	argc := argcByte - '0'
-	args = make([]string, int(argc))
+	args := make([]string, int(argc))
 
 	if flag != '-' && flag != '+' && flag != '/' && flag != '!' {
-		flag = 'x'
-		return
+		return 'x', []string{}
 	}
 
 	readCLRF(r)
@@ -39,12 +54,39 @@ func Decode(req []byte) (flag byte, args []string) {
 		}
 		args[idx] = string(currArg)
 		if !readCLRF(r) {
-			flag = 'x' // signal invalid message
-			return
+			return 'x', []string{}
 		}
 	}
 
 	return flag, args
+
+}
+
+// follower request format
+// command name, argument, username of sender,
+
+func FReqDecode(req []byte) FollowerRequest {
+	flag, args := Decode(req)
+	return FollowerRequest{
+		Flag:    flag,
+		Command: args[0],
+		Arg:     args[1],
+		Sender:  args[2],
+	}
+}
+
+// leader request format
+// command name, argument, list of usernames sepearated by \n
+
+func LReqDecode(req []byte) LeaderRequest {
+	flag, args := Decode(req)
+	usernames := unlistUsernames(args[3])
+	return LeaderRequest{
+		flag:      flag,
+		command:   args[0],
+		arg:       args[1],
+		receivers: usernames,
+	}
 }
 
 func readCLRF(r *bytes.Reader) bool {
@@ -99,105 +141,32 @@ func Pong() string {
 }
 
 func listUsernames(usernames []string) string {
-	list := usernames[0]
-	for _, username := range usernames[1:] {
-		list += "\n" + username
+	list := ""
+	for _, username := range usernames {
+		list += username + "\n"
 	}
 
 	return list
 }
 
-func ServerAcceptServer(serverId int, url string) string {
-	serverIdStr := strconv.Itoa(serverId)
-	serverIdLength := len(serverIdStr)
-	message := fmt.Sprintf("-2\r\n6\r\nACCEPT\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", serverIdLength, serverIdStr, len(url), url)
-	return message
-}
-
-func ServerCreation(serverId int, url string) string {
-	serverIdStr := strconv.Itoa(serverId)
-	serverIdLength := len(serverIdStr)
-	message := fmt.Sprintf("-2\r\n8\r\nCREATION\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", serverIdLength, serverIdStr, len(url), url)
-	return message
-}
-
-func ServerShutdown(serverId int) string {
-	serverIdStr := strconv.Itoa(serverId)
-	serverIdLength := len(serverIdStr)
-	message := fmt.Sprintf("-2\r\n8\r\nSHUTDOWN\r\n%d\r\n%s\r\n\r\n", serverIdLength, serverIdStr)
-	return message
-}
-
-func ServerTellServerId(serverId int) string {
-	serverIdStr := strconv.Itoa(serverId)
-	serverIdLength := len(serverIdStr)
-	message := fmt.Sprintf("-2\r\n8\r\nSERVERID\r\n%d\r\n%s\r\n\r\n", serverIdLength, serverIdStr)
-	return message
-}
-
-func ServerMergeData(hubId int, lobbyIds []int, userData [][]string, idGenStartingInt int) string {
-	hubIdStr := strconv.Itoa(hubId)
-	hubIdLength := len(hubIdStr)
-	var lobbyIdsString string
-	for lobbyId := range lobbyIds {
-		lobbyIdStr := strconv.Itoa(lobbyId)
-		lobbyIdStrLength := len(lobbyIdStr)
-		new_lobby := fmt.Sprintf("%d\r\n%s\r\n", lobbyIdStrLength, lobbyIdStr)
-		lobbyIdsString += new_lobby
+func unlistUsernames(usernameStr string) []string {
+	usernames := make([]string, 0)
+	currName := make([]byte, 0)
+	r := bytes.NewReader([]byte(usernameStr))
+	for {
+		b, err := r.ReadByte()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+		}
+		if b == '\n' {
+			usernames = append(usernames, string(currName))
+			currName = make([]byte, 0)
+		} else {
+			currName = append(currName, b)
+		}
 	}
-	lobbyIdsStringLength := len(lobbyIdsString)
 
-	var userDataStr string
-	for _, user := range userData {
-		username := user[0]
-		serverId := user[1]
-		roomId := user[2]
-		new_user := fmt.Sprintf("%d\r\n%s\r\n%d\r\n%s\r\n%d\r\n%s\r\n", len(username), username, len(serverId), serverId, len(roomId), roomId)
-		userDataStr += new_user
-	}
-	userDataStrLength := len(userDataStr)
-
-	idGenStr := strconv.Itoa(idGenStartingInt)
-	idGenStrLength := len(idGenStr)
-
-	total_args := 1 + 1 + len(lobbyIds) + len(userData) + 1 // the command, hub Id, total lobbies, total users, id gen starting int
-	message := fmt.Sprintf("-%d\r\n5\r\nMERGE\r\n%d\r\n%s\r\n%d\r\n%s%d\r\n%s\r\n%d\r\n%s\r\n\r\n", total_args, hubIdLength, hubIdStr, lobbyIdsStringLength, lobbyIdsString, userDataStrLength, userDataStr, idGenStrLength, idGenStr)
-	return message
-
-}
-
-func ServerDisconnectUser(username string) string {
-	message := fmt.Sprintf("-2\r\n4\r\nDISC\r\n%d\r\n%s\r\n\r\n", len(username), username)
-	return message
-}
-
-func ServerRegisterUser(username string, serverId int) string {
-	serverIdStr := strconv.Itoa(serverId)
-	serverIdLength := len(serverIdStr)
-	message := fmt.Sprintf("-3\r\n8\r\nREGISTER\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", serverIdLength, serverIdStr, len(username), username)
-	return message
-}
-
-func RoomBroadcast(username string, roomId int, broadcast string) string {
-	roomIdStr := strconv.Itoa(roomId)
-	roomIdLength := len(roomIdStr)
-	message := fmt.Sprintf("+4\r\n9\r\nBROADCAST\r\n%d\r\n%s\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", roomIdLength, roomIdStr, len(username), username, len(broadcast), broadcast)
-	return message
-}
-
-func RoomJoinUser(username string, roomId int) string {
-	roomIdStr := strconv.Itoa(roomId)
-	roomIdLength := len(roomIdStr)
-	message := fmt.Sprintf("+3\r\n4\r\nJOIN\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", roomIdLength, roomIdStr, len(username), username)
-	return message
-}
-
-func CreateLobby(lobbyTitle, username string) string {
-	message := fmt.Sprintf("+3\r\n5\r\nLOBBY\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", len(username), username, len(lobbyTitle), lobbyTitle)
-	return message
-}
-
-func UserMessageUser(origin_username string, target_username string, private_message string) string {
-	message := fmt.Sprintf("*4\r\n2\r\nPM\r\n%d\r\n%s\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", len(origin_username), origin_username, len(target_username), target_username, len(private_message), private_message)
-	return message
+	return usernames
 }

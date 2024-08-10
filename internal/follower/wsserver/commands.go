@@ -10,7 +10,7 @@ import (
 
 func (c *Client) handleCommand(message string) (request_msg string) {
 	if message[0] != '/' {
-		request_msg = messages.RoomBroadcast(c.username, -1, message)
+		request_msg = messages.FollowerRoomBroadcast(c.username, -1, message)
 		return
 	}
 	split_msg := strings.Split(message, " ")
@@ -29,7 +29,7 @@ func (c *Client) handleCommand(message string) (request_msg string) {
 	} else if split_msg[0] == "/create" {
 		request_msg = messages.CreateLobby("ws", c.username)
 	} else if split_msg[0] == "/leave" {
-		request_msg = messages.ServerDisconnectUser(c.username)
+		request_msg = messages.DisconnectUser(c.username)
 	} else if split_msg[0] == "/help" {
 		fmt.Println("User is trying to get help!")
 	} else if split_msg[0] == "/msg" {

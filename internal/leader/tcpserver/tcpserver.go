@@ -11,7 +11,6 @@ import (
 
 	"github.com/yoshifrancis/go-gameserver/internal/containers"
 	"github.com/yoshifrancis/go-gameserver/internal/leader/rooms"
-	"github.com/yoshifrancis/go-gameserver/internal/messages"
 )
 
 type TCPServer struct {
@@ -86,8 +85,7 @@ func (s *TCPServer) Run(tcpPort string) {
 			s.mux.Unlock()
 			// do not need to tell anyone about them
 		case lReq := <-s.lRequests:
-			_, decoded := messages.Decode(lReq)
-			fmt.Println("Request from another leader: ", decoded)
+			fmt.Println("Request from another leader: ", string(lReq))
 			// handle leader requests
 		case fReq := <-s.fRequests:
 			fmt.Println("New request from follower: ", fReq)

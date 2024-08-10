@@ -10,33 +10,25 @@ import (
 
 func (s *TCPServer) handleFollowerRequest(req Request) {
 	fmt.Println("New request!")
-	args := req.args
 
-	switch args[0] {
+	switch req.command {
 	case "register":
 		fmt.Println("Registering user")
-		s.userStorage.Set(args[2], *rooms.NewUser(args[2], s.hub))
+		s.userStorage.Set(req.sender, *rooms.NewUser(req.sender, s.hub))
 	case "broadcast":
 		fmt.Println("Broadcasting message to users room")
-		roomId, err := strconv.Atoi(args[1])
-		if err != nil {
-			log.Println(err)
+		user, ok := s.userStorage.Get(req.sender)
+		if !ok {
 			return
-		}
-		if roomId == -1 {
-			roomId = 1
 		}
 
-		if room, ok := s.roomStorage.Get(roomId); !ok {
-			fmt.Println("Not found roomId: ", roomId)
-			return
-		} else {
-			broadcastMsg := room.Broadcast(args[2], args[3])
-			fmt.Println("Broadcast msg: ", broadcastMsg)
-			s.fbroadcast(broadcastMsg)
-		}
+		room := user.GetRoom()
+		broadcastMsg := room.Broadcast(req.sender, req.arg)
+		fmt.Println("Broadcast msg: ", broadcastMsg)
+		s.fbroadcast(broadcastMsg)
+
 	case "join":
-		roomId, err := strconv.Atoi(args[1])
+		roomId, err := strconv.Atoi(req.arg)
 		if err != nil {
 			log.Println(err)
 			return
@@ -45,16 +37,15 @@ func (s *TCPServer) handleFollowerRequest(req Request) {
 		if !ok {
 			return
 		}
-
-		user, ok := s.userStorage.Get(args[2])
+		user, ok := s.userStorage.Get(req.sender)
 		if !ok {
 			return
 		}
-
 		new_room.Join(user)
+
 	case "lobby":
-		creatorUsername := args[1]
-		lobbyTitle := args[2]
+		creatorUsername := req.sender
+		lobbyTitle := req.arg
 		new_lobby := rooms.NewLobby(s.idGen(), s.hub, lobbyTitle, creatorUsername)
 		user, ok := s.userStorage.Get(creatorUsername)
 		if ok {
