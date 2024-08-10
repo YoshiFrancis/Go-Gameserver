@@ -47,8 +47,8 @@ func (l *Lobby) Join(user *User) (leavingTmpl, joiningTmpl []byte) {
 	user.room = l
 	fmt.Println(user.username + " has joined " + user.room.GetName())
 	l.msgHist.Enqueue(Message{
-		username: "Server",
-		text:     user.username + " has joined!",
+		Username: "Server",
+		Text:     user.username + " has joined!",
 	})
 
 	joiningTmpl = containers.RenderTemplate(lobbyTemplate, struct {
@@ -123,7 +123,7 @@ func (l *Lobby) getHTMXMessages() string {
 	messages := l.msgHist.Items()
 	htmx := "<div id=\"chat-room\" hx-swap=\"outerHTML\"><ul>"
 	for _, message := range messages {
-		htmx += "<li>" + message.username + ": " + message.text + "</li>"
+		htmx += "<li>" + message.Username + ": " + message.Text + "</li>"
 	}
 	htmx += "</ul></div>"
 	return htmx

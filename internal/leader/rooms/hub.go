@@ -36,6 +36,7 @@ func (h *Hub) Join(user *User) (leavingTmpl, joiningTmpl []byte) {
 	h.users.Set(user.username, *user)
 	user.room = h
 	fmt.Println("People in hub: ", h.users.Keys())
+	fmt.Println(h.msgHist.Items())
 	joiningTmpl = containers.RenderTemplate(hubTemplate, struct {
 		Participants []string
 		Messages     []Message
@@ -96,7 +97,7 @@ func (h *Hub) getHTMXMessages() string {
 	messages := h.msgHist.Items()
 	htmx := "<div id=\"chat-room\" hx-swap=\"outerHTML\"><ul>"
 	for _, message := range messages {
-		htmx += "<li>" + message.username + ": " + message.text + "</li>"
+		htmx += "<li>" + message.Username + ": " + message.Text + "</li>"
 	}
 	htmx += "</ul></div>"
 	return htmx

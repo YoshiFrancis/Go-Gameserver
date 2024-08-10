@@ -12,6 +12,6 @@ type Room interface {
 }
 
 type Message struct {
-	username string
-	text     string
+	Username string
+	Text     string
 }
