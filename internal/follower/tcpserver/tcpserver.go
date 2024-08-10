@@ -69,16 +69,14 @@ func (s *TCPServer) Shutdown() {
 
 func (s *TCPServer) leaderRead() {
 	for {
-		buffer := make([]byte, 1024)
+		buffer := make([]byte, 2028)
 		_, err := s.leaderConn.Read(buffer)
 		if err != nil {
 			fmt.Println("Error reading from leader: ", err)
 			return
 		}
-
-		go func() {
-			lReq := messages.LReqDecode(buffer)
-			s.Lfrom <- wsserver.NewLeaderRequest(lReq.Command, lReq.Arg, lReq.Receivers)
-		}()
+		fmt.Println("New leader request: ", string(buffer))
+		lReq := messages.LReqDecode(buffer)
+		s.Lfrom <- wsserver.NewLeaderRequest(lReq.Command, lReq.Arg, lReq.Receivers)
 	}
 }
