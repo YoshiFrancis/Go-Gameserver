@@ -33,6 +33,14 @@ func TestDecode(t *testing.T) {
 			wantArgs: []string{"BROADCAST", "42", "YoshiKing101", "Yoshi is the king!"},
 		},
 		{
+			name: "Empty username",
+			args: args{
+				req: []byte("-4\r\n9\r\nBROADCAST\r\n2\r\n42\r\n12\r\nYoshiKing101\r\n0\r\n\r\n\r\n"),
+			},
+			wantFlag: '-',
+			wantArgs: []string{"BROADCAST", "42", "YoshiKing101", ""},
+		},
+		{
 			name: "Follower Req",
 			args: args{
 				req: []byte(FollowerRoomBroadcast("Hello World", "Yoshi")),

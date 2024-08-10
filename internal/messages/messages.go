@@ -49,7 +49,8 @@ func FReqDecode(req []byte) FollowerRequest {
 
 func LReqDecode(req []byte) LeaderRequest {
 	flag, args := Decode(req)
-	usernames := unlistUsernames(args[3])
+	fmt.Println("Decoded leader arguments: ", args)
+	usernames := unlistUsernames(args[2])
 	return LeaderRequest{
 		Flag:      flag,
 		Command:   strings.ToLower(args[0]),

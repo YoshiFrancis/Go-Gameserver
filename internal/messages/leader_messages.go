@@ -61,6 +61,6 @@ func ServerMergeData(hubId int, lobbyIds []int, userData [][]string, idGenStarti
 
 func LeaderRoomBroadcast(broadcast string, usernames []string) string {
 	usernamesStr := listUsernames(usernames)
-	message := fmt.Sprintf("+4\r\n9\r\nBROADCAST\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", len(broadcast), broadcast, len(usernamesStr), usernamesStr)
+	message := fmt.Sprintf("+3\r\n9\r\nBROADCAST\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", len(broadcast), broadcast, len(usernamesStr), usernamesStr)
 	return message
 }

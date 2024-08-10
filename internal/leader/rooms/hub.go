@@ -1,6 +1,7 @@
 package rooms
 
 import (
+	"fmt"
 	"html/template"
 
 	"github.com/yoshifrancis/go-gameserver/internal/containers"
@@ -31,12 +32,18 @@ func NewHub(id int) *Hub {
 
 func (h *Hub) Join(user User) []byte {
 	user.room.Leave(user)
+	fmt.Println(user.username + " is joining the hub!")
 	h.users.Set(user.username, user)
+	user.room = h
+	fmt.Println("People in hub: ", h.users.Keys())
 	return containers.RenderTemplate(hubTemplate, struct{ Username string }{Username: user.username})
 }
 
 func (h *Hub) Leave(user User) {
+	fmt.Println(user.username + " is leaving the hub!")
 	h.users.Delete(user.username)
+	fmt.Println("People in hub: ", h.users.Keys())
+	user.room = nil
 }
 
 func (h *Hub) Broadcast(sender, message string) string {

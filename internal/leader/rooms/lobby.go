@@ -1,6 +1,7 @@
 package rooms
 
 import (
+	"fmt"
 	"html/template"
 
 	"github.com/yoshifrancis/go-gameserver/internal/containers"
@@ -24,6 +25,7 @@ type Lobby struct {
 }
 
 func NewLobby(id int, prevRoom Room, title, creator string) *Lobby {
+	fmt.Println("Creating new lobby: ", title)
 	return &Lobby{
 		users:    containers.NewStorage[string, User](),
 		roomId:   id,
@@ -36,8 +38,13 @@ func NewLobby(id int, prevRoom Room, title, creator string) *Lobby {
 }
 
 func (l *Lobby) Join(user User) []byte {
+
 	user.room.Leave(user)
+
+	fmt.Println(user.username + " is joining " + l.title)
+
 	l.users.Set(user.username, user)
+	user.room = l
 	return containers.RenderTemplate(lobbyTemplate, struct {
 		LobbyTitle      string
 		Username        string
@@ -50,8 +57,9 @@ func (l *Lobby) Join(user User) []byte {
 }
 
 func (l *Lobby) Leave(user User) {
+	fmt.Println(user.username + " is leaving " + l.title)
 	l.users.Delete(user.username)
-	l.prevRoom.Join(user)
+	user.room = nil
 }
 
 func (l *Lobby) Broadcast(sender, message string) string {
