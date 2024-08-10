@@ -32,6 +32,14 @@ func TestDecode(t *testing.T) {
 			wantFlag: '-',
 			wantArgs: []string{"BROADCAST", "42", "YoshiKing101", "Yoshi is the king!"},
 		},
+		{
+			name: "Follower Req",
+			args: args{
+				req: []byte(FollowerRoomBroadcast("Hello World", "Yoshi")),
+			},
+			wantFlag: '-',
+			wantArgs: []string{"BROADCAST", "Hello World", "Yoshi"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

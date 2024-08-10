@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 )
 
 /*
@@ -35,7 +36,7 @@ type LeaderRequest struct {
 func FReqDecode(req []byte) FollowerRequest {
 	flag, args := Decode(req)
 	fReq := FollowerRequest{Flag: flag}
-	fReq.Command = args[0]
+	fReq.Command = strings.ToLower(args[0])
 	fReq.Arg = args[1]
 	if len(args) > 2 {
 		fReq.Sender = args[2]
@@ -51,7 +52,7 @@ func LReqDecode(req []byte) LeaderRequest {
 	usernames := unlistUsernames(args[3])
 	return LeaderRequest{
 		flag:      flag,
-		command:   args[0],
+		command:   strings.ToLower(args[0]),
 		arg:       args[1],
 		receivers: usernames,
 	}

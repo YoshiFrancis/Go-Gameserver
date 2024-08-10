@@ -9,16 +9,15 @@ import (
 )
 
 func (s *TCPServer) handleFollowerRequest(req Request) {
-	fmt.Println("New request!")
-
 	switch req.command {
 	case "register":
 		fmt.Println("Registering user")
-		s.userStorage.Set(req.sender, *rooms.NewUser(req.sender, s.hub))
+		s.userStorage.Set(req.arg, *rooms.NewUser(req.arg, s.hub))
 	case "broadcast":
 		fmt.Println("Broadcasting message to users room")
 		user, ok := s.userStorage.Get(req.sender)
 		if !ok {
+			fmt.Println("Could not find user")
 			return
 		}
 

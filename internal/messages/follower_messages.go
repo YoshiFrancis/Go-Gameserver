@@ -15,7 +15,7 @@ func RegisterUser(username string) string {
 }
 
 func FollowerRoomBroadcast(broadcast, username string) string {
-	message := fmt.Sprintf("+3\r\n9\r\nBROADCAST\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", len(broadcast), broadcast, len(username), username)
+	message := fmt.Sprintf("-3\r\n9\r\nBROADCAST\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", len(broadcast), broadcast, len(username), username)
 	return message
 }
 
