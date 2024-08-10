@@ -37,7 +37,7 @@ const (
 
 type WSServer struct {
 	Clients    *containers.Storage[string, *Client]
-	broadcast  chan []byte
+	broadcast  chan LeaderRequest
 	unregister chan *Client
 	register   chan *Client
 	TCPfrom    chan []byte
@@ -46,10 +46,16 @@ type WSServer struct {
 	ServerId   string
 }
 
+type LeaderRequest struct {
+	command   string
+	arg       string
+	usernames []string
+}
+
 func NewWSServer(done chan bool) *WSServer {
 	return &WSServer{
 		Clients:    containers.NewStorage[string, *Client](),
-		broadcast:  make(chan []byte, 24),
+		broadcast:  make(chan LeaderRequest, 24),
 		unregister: make(chan *Client),
 		register:   make(chan *Client),
 		done:       done,
@@ -118,10 +124,8 @@ func (ws *WSServer) Ping(w http.ResponseWriter, r *http.Request) {
 func (ws *WSServer) Run() {
 	for {
 		select {
-		case msg := <-ws.broadcast:
-			for _, client := range ws.Clients.Values() {
-				client.send <- msg
-			}
+		case req := <-ws.broadcast:
+			ws.handleLeaderRequest(req)
 		case client := <-ws.register:
 			fmt.Println("Registering client!", client.username)
 			ws.Clients.Set(client.username, client)
@@ -131,7 +135,13 @@ func (ws *WSServer) Run() {
 				ws.Clients.Delete(client.username)
 			}
 		case from := <-ws.TCPfrom:
-			ws.broadcast <- from
+			decoded := messages.LReqDecode(from)
+
+			ws.broadcast <- LeaderRequest{
+				command:   decoded.Command,
+				arg:       decoded.Arg,
+				usernames: decoded.Receivers,
+			}
 		}
 	}
 }

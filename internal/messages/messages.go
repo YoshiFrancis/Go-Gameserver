@@ -23,10 +23,10 @@ type FollowerRequest struct {
 }
 
 type LeaderRequest struct {
-	flag      byte
-	command   string
-	arg       string
-	receivers []string
+	Flag      byte
+	Command   string
+	Arg       string
+	Receivers []string
 }
 
 // follower request format
@@ -51,10 +51,10 @@ func LReqDecode(req []byte) LeaderRequest {
 	flag, args := Decode(req)
 	usernames := unlistUsernames(args[3])
 	return LeaderRequest{
-		flag:      flag,
-		command:   strings.ToLower(args[0]),
-		arg:       args[1],
-		receivers: usernames,
+		Flag:      flag,
+		Command:   strings.ToLower(args[0]),
+		Arg:       args[1],
+		Receivers: usernames,
 	}
 }
 

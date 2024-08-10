@@ -23,7 +23,7 @@ type TCPServer struct {
 	idGen       func() int
 	url         string
 	userStorage *containers.Storage[string, rooms.User] // username, User struct
-	roomStorage *containers.Storage[int, rooms.Room]    // roomId, room
+	roomStorage *containers.Storage[string, rooms.Room] // roomId, room
 	done        chan bool
 	hub         *rooms.Hub
 	mux         sync.Mutex
@@ -39,12 +39,12 @@ func NewTCPServer(done chan bool) *TCPServer {
 		fRequests:   make(chan Request),
 		idGen:       idGen(),
 		userStorage: containers.NewStorage[string, rooms.User](),
-		roomStorage: containers.NewStorage[int, rooms.Room](),
+		roomStorage: containers.NewStorage[string, rooms.Room](),
 		done:        done,
 		hub:         rooms.NewHub(1),
 		mux:         sync.Mutex{},
 	}
-	new_server.roomStorage.Set(1, new_server.hub)
+	new_server.roomStorage.Set("hub", new_server.hub)
 	return new_server
 }
 

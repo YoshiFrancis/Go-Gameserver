@@ -4,6 +4,7 @@ import (
 	"html/template"
 
 	"github.com/yoshifrancis/go-gameserver/internal/containers"
+	"github.com/yoshifrancis/go-gameserver/internal/messages"
 )
 
 var hubTemplate *template.Template
@@ -40,7 +41,8 @@ func (h *Hub) Leave(user User) {
 
 func (h *Hub) Broadcast(sender, message string) string {
 	h.msgHist.Enqueue(Message{sender, message})
-	return h.getHTMXMessages()
+	broadcastMsg := messages.LeaderRoomBroadcast(h.getHTMXMessages(), h.users.Keys())
+	return broadcastMsg
 }
 
 func (h *Hub) GetInfo() string {
@@ -50,6 +52,14 @@ func (h *Hub) GetInfo() string {
 
 func (h *Hub) GetId() int {
 	return h.roomId
+}
+
+func (h *Hub) LeavingMessage(leavingUser string) string {
+	return messages.LeaderRoomBroadcast(leavingUser+" has left!", h.users.Keys())
+}
+
+func (h *Hub) JoiningMessage(joiningUser string) string {
+	return messages.LeaderRoomBroadcast(joiningUser+" has left!", h.users.Keys())
 }
 
 func (h *Hub) getHTMXMessages() string {

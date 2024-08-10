@@ -2,8 +2,6 @@ package tcpserver
 
 import (
 	"fmt"
-	"log"
-	"strconv"
 
 	"github.com/yoshifrancis/go-gameserver/internal/leader/rooms"
 )
@@ -27,12 +25,7 @@ func (s *TCPServer) handleFollowerRequest(req Request) {
 		s.fbroadcast(broadcastMsg)
 
 	case "join":
-		roomId, err := strconv.Atoi(req.arg)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		new_room, ok := s.roomStorage.Get(roomId)
+		new_room, ok := s.roomStorage.Get(req.arg)
 		if !ok {
 			return
 		}
@@ -40,7 +33,11 @@ func (s *TCPServer) handleFollowerRequest(req Request) {
 		if !ok {
 			return
 		}
+
 		new_room.Join(user)
+
+		s.fbroadcast(user.GetRoom().LeavingMessage(req.sender))
+		s.fbroadcast(user.GetRoom().JoiningMessage(req.sender))
 
 	case "lobby":
 		creatorUsername := req.sender

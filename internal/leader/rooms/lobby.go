@@ -4,6 +4,7 @@ import (
 	"html/template"
 
 	"github.com/yoshifrancis/go-gameserver/internal/containers"
+	"github.com/yoshifrancis/go-gameserver/internal/messages"
 )
 
 var lobbyTemplate *template.Template
@@ -69,6 +70,14 @@ func (l *Lobby) GetInfo() string {
 
 func (l *Lobby) GetName() string {
 	return l.title
+}
+
+func (l *Lobby) LeavingMessage(leavingUser string) string {
+	return messages.LeaderRoomBroadcast(leavingUser+" has left!", l.users.Keys())
+}
+
+func (l *Lobby) JoiningMessage(joiningUser string) string {
+	return messages.LeaderRoomBroadcast(joiningUser+" has left!", l.users.Keys())
 }
 
 func (l *Lobby) getHTMXMessages() string {
