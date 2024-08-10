@@ -37,14 +37,15 @@ func NewLobby(id int, prevRoom Room, title, creator string) *Lobby {
 	}
 }
 
-func (l *Lobby) Join(user User) []byte {
+func (l *Lobby) Join(user *User) []byte {
 
 	user.room.Leave(user)
 
 	fmt.Println(user.username + " is joining " + l.title)
 
-	l.users.Set(user.username, user)
+	l.users.Set(user.username, *user)
 	user.room = l
+	fmt.Println(user.username + " has joined " + user.room.GetName())
 	return containers.RenderTemplate(lobbyTemplate, struct {
 		LobbyTitle      string
 		Username        string
@@ -56,7 +57,7 @@ func (l *Lobby) Join(user User) []byte {
 	})
 }
 
-func (l *Lobby) Leave(user User) {
+func (l *Lobby) Leave(user *User) {
 	fmt.Println(user.username + " is leaving " + l.title)
 	l.users.Delete(user.username)
 	user.room = nil
@@ -64,7 +65,8 @@ func (l *Lobby) Leave(user User) {
 
 func (l *Lobby) Broadcast(sender, message string) string {
 	l.msgHist.Enqueue(Message{sender, message})
-	return l.getHTMXMessages()
+	broadcastMsg := messages.LeaderRoomBroadcast(l.getHTMXMessages(), l.users.Keys())
+	return broadcastMsg
 }
 
 func (l *Lobby) HandleMessage(message string, sender string) {

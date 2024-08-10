@@ -25,7 +25,7 @@ func RoomJoinUser(lobbyTitle, username string) string {
 }
 
 func CreateLobby(lobbyTitle, username string) string {
-	message := fmt.Sprintf("+3\r\n5\r\nLOBBY\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", len(username), username, len(lobbyTitle), lobbyTitle)
+	message := fmt.Sprintf("+3\r\n5\r\nLOBBY\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", len(lobbyTitle), lobbyTitle, len(username), username)
 	return message
 }
 
