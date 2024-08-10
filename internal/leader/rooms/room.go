@@ -1,9 +1,10 @@
 package rooms
 
 type Room interface {
-	Join(user *User) []byte
-	Leave(user *User)
-	Broadcast(sender, message string) string
+	Join(user *User) (leavingTmpl, joiningTmpl []byte)
+	Leave(user *User) []byte
+	BroadcastMessage(sender, message string) string
+	BroadcastTemplate(tmpl string) string
 	LeavingMessage(leavingUser string) string
 	JoiningMessage(joiningUser string) string
 	GetInfo() string

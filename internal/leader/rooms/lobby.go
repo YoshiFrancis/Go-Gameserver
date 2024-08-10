@@ -37,36 +37,65 @@ func NewLobby(id int, prevRoom Room, title, creator string) *Lobby {
 	}
 }
 
-func (l *Lobby) Join(user *User) []byte {
+func (l *Lobby) Join(user *User) (leavingTmpl, joiningTmpl []byte) {
 
-	user.room.Leave(user)
+	leavingTmpl = user.room.Leave(user)
 
 	fmt.Println(user.username + " is joining " + l.title)
 
 	l.users.Set(user.username, *user)
 	user.room = l
 	fmt.Println(user.username + " has joined " + user.room.GetName())
-	return containers.RenderTemplate(lobbyTemplate, struct {
+	l.msgHist.Enqueue(Message{
+		username: "Server",
+		text:     user.username + " has joined!",
+	})
+
+	joiningTmpl = containers.RenderTemplate(lobbyTemplate, struct {
 		LobbyTitle      string
 		Username        string
 		CreatorUsername string
+		Participants    []string
+		Messages        []Message
 	}{
 		LobbyTitle:      l.title,
 		Username:        user.username,
 		CreatorUsername: l.creator,
+		Participants:    l.users.Keys(),
+		Messages:        l.msgHist.Items(),
 	})
+
+	return leavingTmpl, joiningTmpl
 }
 
-func (l *Lobby) Leave(user *User) {
+func (l *Lobby) Leave(user *User) []byte {
 	fmt.Println(user.username + " is leaving " + l.title)
 	l.users.Delete(user.username)
 	user.room = nil
+
+	leavingTmpl := containers.RenderTemplate(lobbyTemplate, struct {
+		LobbyTitle      string
+		CreatorUsername string
+		Participants    []string
+		Messages        []Message
+	}{
+		LobbyTitle:      l.title,
+		CreatorUsername: l.creator,
+		Participants:    l.users.Keys(),
+		Messages:        l.msgHist.Items(),
+	})
+
+	return leavingTmpl
 }
 
-func (l *Lobby) Broadcast(sender, message string) string {
+func (l *Lobby) BroadcastMessage(sender, message string) string {
 	l.msgHist.Enqueue(Message{sender, message})
 	broadcastMsg := messages.LeaderRoomBroadcast(l.getHTMXMessages(), l.users.Keys())
 	return broadcastMsg
+}
+
+func (l *Lobby) BroadcastTemplate(tmpl string) string {
+	return messages.LeaderRoomBroadcast(tmpl, l.users.Keys())
 }
 
 func (l *Lobby) HandleMessage(message string, sender string) {

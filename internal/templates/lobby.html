@@ -1,7 +1,20 @@
 <div id="app" hx-swap="outerHTML">
-  <h1>{{ .LobbyTitle }} : {{ .Username }}</h1>
+  <h1>{{ .LobbyTitle }}</h1>
   <h3>Started by {{ .CreatorUsername }}</h3>
-  <div id="chat-room"></div>
+  <div id="participants">
+    <ul>
+      {{ range .Participants }}
+        <li>{{ .username }}</li>
+      {{ end }}
+    </ul>
+  </div>
+  <div id="chat-room">
+    <ul>
+      {{ range .Messages }}
+      <li>{{ .username }}: {{ .text }}</li>
+      {{ end }}
+    </ul>
+  </div>
   <form id="lobby-chat-room-form" ws-send hx-target="#chat-room">
     <input name="message">
     <br>

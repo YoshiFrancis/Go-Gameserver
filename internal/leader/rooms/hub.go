@@ -30,26 +30,49 @@ func NewHub(id int) *Hub {
 	}
 }
 
-func (h *Hub) Join(user *User) []byte {
-	user.room.Leave(user)
+func (h *Hub) Join(user *User) (leavingTmpl, joiningTmpl []byte) {
+	leavingTmpl = user.room.Leave(user)
 	fmt.Println(user.username + " is joining the hub!")
 	h.users.Set(user.username, *user)
 	user.room = h
 	fmt.Println("People in hub: ", h.users.Keys())
-	return containers.RenderTemplate(hubTemplate, struct{ Username string }{Username: user.username})
+	joiningTmpl = containers.RenderTemplate(hubTemplate, struct {
+		Participants []string
+		Messages     []Message
+	}{
+		Participants: h.users.Keys(),
+		Messages:     h.msgHist.Items(),
+	})
+
+	return leavingTmpl, joiningTmpl
 }
 
-func (h *Hub) Leave(user *User) {
+func (h *Hub) Leave(user *User) []byte {
 	fmt.Println(user.username + " is leaving the hub!")
 	h.users.Delete(user.username)
 	fmt.Println("People in hub: ", h.users.Keys())
 	user.room = nil
+
+	leavingTmpl := containers.RenderTemplate(hubTemplate, struct {
+		Participants []string
+		Messages     []Message
+	}{
+		Participants: h.users.Keys(),
+		Messages:     h.msgHist.Items(),
+	})
+
+	return leavingTmpl
+
 }
 
-func (h *Hub) Broadcast(sender, message string) string {
+func (h *Hub) BroadcastMessage(sender, message string) string {
 	h.msgHist.Enqueue(Message{sender, message})
 	broadcastMsg := messages.LeaderRoomBroadcast(h.getHTMXMessages(), h.users.Keys())
 	return broadcastMsg
+}
+
+func (h *Hub) BroadcastTemplate(tmpl string) string {
+	return messages.LeaderRoomBroadcast(tmpl, h.users.Keys())
 }
 
 func (h *Hub) GetInfo() string {
