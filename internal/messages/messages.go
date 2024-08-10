@@ -28,6 +28,35 @@ type LeaderRequest struct {
 	receivers []string
 }
 
+// follower request format
+// command name, argument, username of sender,
+// some follower commands do not have a sender
+
+func FReqDecode(req []byte) FollowerRequest {
+	flag, args := Decode(req)
+	fReq := FollowerRequest{Flag: flag}
+	fReq.Command = args[0]
+	fReq.Arg = args[1]
+	if len(args) > 2 {
+		fReq.Sender = args[2]
+	}
+	return fReq
+}
+
+// leader request format
+// command name, argument, list of usernames sepearated by \n
+
+func LReqDecode(req []byte) LeaderRequest {
+	flag, args := Decode(req)
+	usernames := unlistUsernames(args[3])
+	return LeaderRequest{
+		flag:      flag,
+		command:   args[0],
+		arg:       args[1],
+		receivers: usernames,
+	}
+}
+
 func Decode(req []byte) (byte, []string) {
 
 	r := bytes.NewReader(req)
@@ -60,33 +89,6 @@ func Decode(req []byte) (byte, []string) {
 
 	return flag, args
 
-}
-
-// follower request format
-// command name, argument, username of sender,
-
-func FReqDecode(req []byte) FollowerRequest {
-	flag, args := Decode(req)
-	return FollowerRequest{
-		Flag:    flag,
-		Command: args[0],
-		Arg:     args[1],
-		Sender:  args[2],
-	}
-}
-
-// leader request format
-// command name, argument, list of usernames sepearated by \n
-
-func LReqDecode(req []byte) LeaderRequest {
-	flag, args := Decode(req)
-	usernames := unlistUsernames(args[3])
-	return LeaderRequest{
-		flag:      flag,
-		command:   args[0],
-		arg:       args[1],
-		receivers: usernames,
-	}
 }
 
 func readCLRF(r *bytes.Reader) bool {

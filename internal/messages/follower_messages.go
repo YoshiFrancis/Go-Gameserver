@@ -2,7 +2,6 @@ package messages
 
 import (
 	"fmt"
-	"strconv"
 )
 
 func DisconnectUser(username string) string {
@@ -10,24 +9,18 @@ func DisconnectUser(username string) string {
 	return message
 }
 
-func RegisterUser(username string, serverId int) string {
-	serverIdStr := strconv.Itoa(serverId)
-	serverIdLength := len(serverIdStr)
-	message := fmt.Sprintf("-3\r\n8\r\nREGISTER\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", serverIdLength, serverIdStr, len(username), username)
+func RegisterUser(username string) string {
+	message := fmt.Sprintf("-2\r\n8\r\nREGISTER\r\n%d\r\n%s\r\n\r\n", len(username), username)
 	return message
 }
 
-func FollowerRoomBroadcast(username string, roomId int, broadcast string) string {
-	roomIdStr := strconv.Itoa(roomId)
-	roomIdLength := len(roomIdStr)
-	message := fmt.Sprintf("+4\r\n9\r\nBROADCAST\r\n%d\r\n%s\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", roomIdLength, roomIdStr, len(username), username, len(broadcast), broadcast)
+func FollowerRoomBroadcast(broadcast, username string) string {
+	message := fmt.Sprintf("+3\r\n9\r\nBROADCAST\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", len(broadcast), broadcast, len(username), username)
 	return message
 }
 
-func RoomJoinUser(username string, roomId int) string {
-	roomIdStr := strconv.Itoa(roomId)
-	roomIdLength := len(roomIdStr)
-	message := fmt.Sprintf("+3\r\n4\r\nJOIN\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", roomIdLength, roomIdStr, len(username), username)
+func RoomJoinUser(lobbyTitle, username string) string {
+	message := fmt.Sprintf("+3\r\n4\r\nJOIN\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", len(lobbyTitle), lobbyTitle, len(username), username)
 	return message
 }
 
