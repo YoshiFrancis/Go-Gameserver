@@ -179,6 +179,7 @@ func (s *TCPServer) Shutdown() {
 }
 
 func (s *TCPServer) fbroadcast(message string) {
+	fmt.Println("Broadcasting: ", message)
 	for _, server := range s.fServers {
 		server.Send <- []byte(message)
 	}

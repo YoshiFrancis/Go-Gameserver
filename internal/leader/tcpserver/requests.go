@@ -12,8 +12,8 @@ func (s *TCPServer) handleFollowerRequest(req Request) {
 
 		new_user := rooms.NewUser(req.arg, s.hub)
 		s.userStorage.Set(req.arg, new_user)
-		s.hub.Join(new_user)
-		s.fbroadcast(s.hub.JoiningMessage(req.arg))
+		_, joiningTmpl := s.hub.Join(new_user)
+		s.fbroadcast(s.hub.BroadcastTemplate(string(joiningTmpl)))
 
 	case "broadcast":
 

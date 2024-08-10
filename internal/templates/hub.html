@@ -2,7 +2,7 @@
   <div id="participants">
     <ul>
       {{ range .Participants }}
-        <li>{{ .username }}</li>
+        <li>{{ . }}</li>
       {{ end }}
     </ul>
   </div>

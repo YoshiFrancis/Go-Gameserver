@@ -93,11 +93,9 @@ func (ws *WSServer) Home(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("New user: ", username.Username)
 
-	c := NewClient(username.Username, conn, ws)
+	NewClient(username.Username, conn, ws)
 	register_msg := messages.RegisterUser(username.Username)
 	ws.TCPto <- []byte(register_msg)
-	hubTemp := containers.RenderTemplate(hubTemplate, struct{ Username string }{Username: username.Username})
-	c.send <- hubTemp
 }
 
 func (ws *WSServer) Ping(w http.ResponseWriter, r *http.Request) {
