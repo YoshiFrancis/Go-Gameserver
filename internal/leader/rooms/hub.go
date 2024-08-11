@@ -19,6 +19,7 @@ type Hub struct {
 	roomId   int
 	registry chan User
 	msgHist  *containers.Queue[Message]
+	app      string
 }
 
 func NewHub(id int) *Hub {
@@ -27,6 +28,7 @@ func NewHub(id int) *Hub {
 		roomId:   id,
 		registry: make(chan User, 8),
 		msgHist:  containers.NewQueue[Message](20),
+		app:      "",
 	}
 }
 
@@ -105,4 +107,12 @@ func (h *Hub) getHTMXMessages() string {
 
 func (h *Hub) GetName() string {
 	return "Hub"
+}
+
+func (h *Hub) GetApp() string {
+	return h.app // should return ""
+}
+
+func (h *Hub) GetUsers() []string {
+	return h.users.Keys()
 }

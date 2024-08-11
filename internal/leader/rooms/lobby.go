@@ -22,6 +22,7 @@ type Lobby struct {
 	title    string
 	msgHist  *containers.Queue[Message]
 	creator  string
+	app      string
 }
 
 func NewLobby(id int, prevRoom Room, title, creator string) *Lobby {
@@ -127,4 +128,12 @@ func (l *Lobby) getHTMXMessages() string {
 	}
 	htmx += "</ul></div>"
 	return htmx
+}
+
+func (l *Lobby) GetApp() string {
+	return l.app
+}
+
+func (l *Lobby) GetUsers() []string {
+	return l.users.Keys()
 }

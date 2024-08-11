@@ -4,12 +4,8 @@ import (
 	"fmt"
 
 	"github.com/yoshifrancis/go-gameserver/internal/leader/rooms"
+	"github.com/yoshifrancis/go-gameserver/internal/messages"
 )
-
-type Request interface {
-	getFlag() byte
-	getCommand() string
-}
 
 type FollowerRequest struct {
 	flag    byte
@@ -20,27 +16,10 @@ type FollowerRequest struct {
 }
 
 type ApplicationRequest struct {
-	flag       byte
 	command    string
 	arg        string
 	lobbyTitle string
 	receivers  []string
-}
-
-func (f FollowerRequest) getFlag() byte {
-	return f.flag
-}
-
-func (f FollowerRequest) getCommand() string {
-	return f.command
-}
-
-func (a ApplicationRequest) getFlag() byte {
-	return a.flag
-}
-
-func (a ApplicationRequest) getCommand() string {
-	return a.command
 }
 
 func (s *TCPServer) handleFollowerRequest(req FollowerRequest) {
@@ -98,6 +77,19 @@ func (s *TCPServer) handleFollowerRequest(req FollowerRequest) {
 		s.fbroadcast(s.hub.BroadcastTemplate(string(leaveTmpl)))
 		broadcastMsg := s.hub.BroadcastMessage("Server", lobbyTitle+" lobby created by "+creatorUsername)
 		s.fbroadcast(broadcastMsg)
+
+	case "app":
+		user, ok := s.userStorage.Get(req.sender)
+		if !ok {
+			return
+		}
+		appName := user.GetRoom().GetApp()
+		app, ok := s.aServers[appName]
+		if !ok {
+			return
+		}
+		appReq := messages.ForApplicationRequest(req.arg, user.GetRoom().GetName(), req.sender)
+		app.Send <- []byte(appReq)
 	}
 }
 
@@ -106,12 +98,15 @@ func (s *TCPServer) handleApplicationRequest(req ApplicationRequest) {
 		fmt.Println("Application server is shutting down!")
 		// TODO:
 		// gracefully shutdown
+	} else if req.command == "broadcast" { // to all users in lobby
+		room, ok := s.roomStorage.Get(req.lobbyTitle)
+		if ok {
+			s.fbroadcast(messages.LeaderRoomBroadcast(req.arg, room.GetUsers()))
+		}
+	} else if req.command == "send" { // to directed users
+		s.fbroadcast(messages.LeaderRoomBroadcast(req.arg, req.receivers))
 	}
 
-	// all an application does is send htmx to the users in the lobby
-	// req.arg -> htmx
-	// req.sender -> lobbyTitle
-
-	// maybe implement some security to make sure that the application has access to the lobby
+	// maybe implement some security to make sure that the application has access to the users
 
 }

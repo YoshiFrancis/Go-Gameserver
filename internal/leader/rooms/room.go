@@ -9,6 +9,8 @@ type Room interface {
 	JoiningMessage(joiningUser string) string
 	GetInfo() string
 	GetName() string
+	GetApp() string
+	GetUsers() []string
 }
 
 type Message struct {
