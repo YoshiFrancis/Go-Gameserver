@@ -13,19 +13,24 @@ import (
 )
 
 func main() {
-	if len(os.Args) != 3 {
-		log.Fatal("Usage: go run main.go <TYPE OF SERVER (L, F)> <PORT>")
+	if len(os.Args) != 3 && len(os.Args) != 4 {
+		log.Fatal("Usage: go run main.go <TYPE OF SERVER (L, F)> <PORT> <PORT if L")
 	}
 
 	typing := os.Args[1]
 	port := os.Args[2]
+	port2 := os.Args[3]
 	_, err := strconv.Atoi(port)
+	if err != nil {
+		fmt.Println("Given an invalid port num")
+	}
+	_, err = strconv.Atoi(port2)
 	if err != nil {
 		fmt.Println("Given an invalid port num")
 	}
 
 	if typing == "L" {
-		leader.Leader_init(":"+port, nil)
+		leader.Leader_init(":"+port, port2, nil)
 	} else if typing == "F" {
 		fmt.Println("What is the address of the leader you would like to follow?")
 		leaderip := input()

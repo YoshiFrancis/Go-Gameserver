@@ -15,12 +15,13 @@ import (
 
 const (
 	leaderTcpPort  = ":8000"
+	leaderTcpAPort = ":8002"
 	followerWsPort = ":8001"
 )
 
 func TestLeaderInit(t *testing.T) {
 	t.Run("Initialize Server and Ping Through TCP", func(t *testing.T) {
-		leader.Leader_init(leaderTcpPort, nil)
+		leader.Leader_init(leaderTcpPort, leaderTcpAPort, nil)
 
 		conn, err := net.Dial("tcp", "localhost"+leaderTcpPort)
 		if err != nil {
@@ -54,7 +55,7 @@ func TestLeaderInit(t *testing.T) {
 func TestFollowerInit(t *testing.T) {
 	fmt.Print("BEGINNING TESTS\n\n\n\n")
 
-	leader.Leader_init(leaderTcpPort, nil)
+	leader.Leader_init(leaderTcpPort, leaderTcpAPort, nil)
 	go follower.Follower_init(followerWsPort, leaderTcpPort, nil)
 
 	fmt.Print("RUNNING TESTS\n\n\n\n")
@@ -99,7 +100,7 @@ func TestFollowerInit(t *testing.T) {
 }
 
 func TestFollowerLogin(t *testing.T) {
-	leader.Leader_init(leaderTcpPort, nil)
+	leader.Leader_init(leaderTcpPort, "0", nil)
 	go follower.Follower_init(followerWsPort, leaderTcpPort, nil)
 	url := "ws://localhost" + followerWsPort + "/home"
 	type args struct {
@@ -160,7 +161,7 @@ func TestLeaderShutdown(t *testing.T) {
 	t.Run("Leader and Follower able to signal they shutdown", func(t *testing.T) {
 		leaderDone := make(chan bool)
 		followerDone := make(chan bool)
-		leader := leader.Leader_init(leaderTcpPort, leaderDone)
+		leader := leader.Leader_init(leaderTcpPort, "0", leaderDone)
 		go follower.Follower_init(followerWsPort, leaderTcpPort, followerDone)
 
 		go func() {

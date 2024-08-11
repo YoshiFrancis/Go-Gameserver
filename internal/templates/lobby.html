@@ -1,4 +1,4 @@
-<div id="app" hx-swap="outerHTML">
+<div id="room" hx-swap="outerHTML">
   <h1>Lobby {{ .LobbyTitle }}</h1>
   <h3>Started by {{ .CreatorUsername }}</h3>
   <div id="participants">
@@ -20,4 +20,5 @@
     <br>
     <button type="submit">Send</button>
   </form>
+  <div id="app" hx-swap="outerHTML"></div>
 </div>

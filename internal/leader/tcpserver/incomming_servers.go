@@ -12,25 +12,17 @@ import (
 // also make struct to encapsulate how to swend messages to leaders and followers
 // so creation of LeaderMessage and FollowerMessage (or perhaps just a Message)
 
-type Request struct {
-	flag    byte
-	command string
-	arg     string
-	sender  string
-	server  *ExtenalTCPServer
-}
-
 type ExtenalTCPServer struct {
 	main_server *TCPServer
 	conn        net.Conn
 	Send        chan []byte
 	Shutdown    chan bool
 	Url         string
-	serverId    int
+	serverId    string
 	class       string
 }
 
-func NewExternalTCPServer(main_server *TCPServer, conn net.Conn, url string, serverId int, class string) *ExtenalTCPServer {
+func NewExternalTCPServer(main_server *TCPServer, conn net.Conn, url string, serverId string, class string) *ExtenalTCPServer {
 	return &ExtenalTCPServer{
 		main_server: main_server,
 		conn:        conn,
@@ -69,24 +61,25 @@ func (s *ExtenalTCPServer) read() {
 				return
 			}
 		}
-		fReq := messages.FReqDecode(buffer)
+		// make a request interface
 
-		new_req := Request{
-			flag:    fReq.Flag,
-			command: fReq.Command,
-			arg:     fReq.Arg,
-			sender:  fReq.Sender,
-			server:  s,
+		if s.class == "F" {
+			fReq := messages.FReqDecode(buffer)
+			new_req := FollowerRequest{
+				flag:    fReq.Flag,
+				command: fReq.Command,
+				arg:     fReq.Arg,
+				sender:  fReq.Sender,
+				server:  s,
+			}
+			if new_req.flag == '!' && new_req.arg == "ping" {
+				s.Send <- []byte(messages.Pong())
+			} else {
+				s.main_server.fRequests <- new_req
+			}
+		} else if s.class == "A" {
+			s.main_server.aRequest <- ApplicationRequest{} // TODO
 		}
-
-		if new_req.flag == '!' && new_req.arg == "ping" {
-			s.Send <- []byte(messages.Pong())
-		} else if s.class == "F" {
-			s.main_server.fRequests <- new_req
-		} else {
-			s.main_server.lRequests <- buffer
-		}
-
 	}
 }
 
@@ -97,8 +90,10 @@ func (s *ExtenalTCPServer) close() {
 	close(s.Shutdown)
 	if s.class == "F" {
 		s.main_server.fRegistry <- s
-	} else {
+	} else if s.class == "L" {
 		s.main_server.lRegistry <- s
+	} else {
+		s.main_server.aRegistry <- s
 	}
 	s.conn.Close()
 }

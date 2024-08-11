@@ -3,6 +3,7 @@ package tcpserver
 import (
 	"bufio"
 	"fmt"
+	"log"
 	"net"
 	"os"
 	"strings"
@@ -14,12 +15,15 @@ import (
 )
 
 type TCPServer struct {
-	lServers    map[string]*ExtenalTCPServer // name of server, tcp connection container
-	fServers    map[int]*ExtenalTCPServer    // id of follower server, tcp connnection container
+	lServers    map[string]*ExtenalTCPServer // name of server, tcp connection container to leader
+	fServers    map[string]*ExtenalTCPServer // id of follower server, tcp connnection container to follower
+	aServers    map[string]*ExtenalTCPServer // name of application, tcp connection connection to application
 	lRegistry   chan *ExtenalTCPServer
 	fRegistry   chan *ExtenalTCPServer
+	aRegistry   chan *ExtenalTCPServer
 	lRequests   chan []byte
-	fRequests   chan Request
+	fRequests   chan FollowerRequest
+	aRequest    chan ApplicationRequest
 	idGen       func() int
 	url         string
 	userStorage *containers.Storage[string, *rooms.User] // username, User struct
@@ -32,11 +36,13 @@ type TCPServer struct {
 func NewTCPServer(done chan bool) *TCPServer {
 	new_server := &TCPServer{
 		lServers:    make(map[string]*ExtenalTCPServer),
-		fServers:    make(map[int]*ExtenalTCPServer),
+		fServers:    make(map[string]*ExtenalTCPServer),
+		aServers:    make(map[string]*ExtenalTCPServer),
 		lRegistry:   make(chan *ExtenalTCPServer),
 		fRegistry:   make(chan *ExtenalTCPServer),
 		lRequests:   make(chan []byte),
-		fRequests:   make(chan Request),
+		fRequests:   make(chan FollowerRequest),
+		aRequest:    make(chan ApplicationRequest),
 		idGen:       idGen(),
 		userStorage: containers.NewStorage[string, *rooms.User](),
 		roomStorage: containers.NewStorage[string, rooms.Room](),
@@ -48,15 +54,23 @@ func NewTCPServer(done chan bool) *TCPServer {
 	return new_server
 }
 
-func (s *TCPServer) Run(tcpPort string) {
+func (s *TCPServer) Run(tcpFPort, tcpAPort string) {
 	defer s.Shutdown()
 
-	leaderListener, err := net.Listen("tcp", tcpPort)
+	followerListener, err := net.Listen("tcp", tcpFPort)
 	if err != nil {
 		fmt.Println("Error setting up listener for tcp server", err.Error())
 		panic(err)
 	}
-	go s.listenForFollower(leaderListener)
+
+	applicationListener, err := net.Listen("tcp", tcpAPort)
+	if err != nil {
+		fmt.Println("Error setting up listener for tcp server", err.Error())
+		panic(err)
+	}
+
+	go s.listenForFollower(followerListener)
+	go s.listenForApplications(applicationListener)
 
 	for {
 		select {
@@ -90,7 +104,9 @@ func (s *TCPServer) Run(tcpPort string) {
 		case fReq := <-s.fRequests:
 			fmt.Println("New request from follower: ", fReq)
 			s.handleFollowerRequest(fReq)
-
+		case aReq := <-s.aRequest:
+			fmt.Println("New request from an application: ", aReq)
+			s.handleApplicationRequest(aReq)
 			// handle request from follower
 		}
 	}
@@ -117,7 +133,7 @@ func (s *TCPServer) listenForFollower(listener net.Listener) bool {
 			continue
 		}
 		fmt.Println("a follower connected!")
-		s.fRegistry <- NewExternalTCPServer(s, conn, conn.LocalAddr().String(), s.idGen(), "F")
+		s.fRegistry <- NewExternalTCPServer(s, conn, conn.LocalAddr().String(), string(s.idGen()), "F")
 	}
 }
 
@@ -131,7 +147,31 @@ func (s *TCPServer) listenForLeaders(listener net.Listener) {
 			fmt.Println("Error accepting new connection!")
 			continue
 		}
-		s.lRegistry <- NewExternalTCPServer(s, conn, conn.LocalAddr().String(), s.idGen(), "L")
+		s.lRegistry <- NewExternalTCPServer(s, conn, conn.LocalAddr().String(), string(s.idGen()), "L")
+	}
+}
+
+func (s *TCPServer) listenForApplications(listener net.Listener) {
+	defer listener.Close()
+	fmt.Println("leader beginning to listen for applications at: ", listener.Addr().String())
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			fmt.Println("Error accepting new connection!")
+			continue
+		}
+
+		// get username
+		nameBuffer := make([]byte, 128)
+		n, err := conn.Read(nameBuffer)
+		if err != nil {
+			log.Println("Error reading from application!")
+			conn.Close()
+			continue
+		}
+
+		s.aRegistry <- NewExternalTCPServer(s, conn, conn.LocalAddr().String(), string(nameBuffer[:n]), "A")
+
 	}
 }
 
@@ -183,4 +223,9 @@ func (s *TCPServer) fbroadcast(message string) {
 	for _, server := range s.fServers {
 		server.Send <- []byte(message)
 	}
+}
+
+func (s *TCPServer) abroadcast(appName, message string) {
+	app := s.aServers[appName]
+	app.Send <- []byte(message)
 }

@@ -6,7 +6,44 @@ import (
 	"github.com/yoshifrancis/go-gameserver/internal/leader/rooms"
 )
 
-func (s *TCPServer) handleFollowerRequest(req Request) {
+type Request interface {
+	getFlag() byte
+	getCommand() string
+}
+
+type FollowerRequest struct {
+	flag    byte
+	command string
+	arg     string
+	sender  string
+	server  *ExtenalTCPServer
+}
+
+type ApplicationRequest struct {
+	flag       byte
+	command    string
+	arg        string
+	lobbyTitle string
+	receivers  []string
+}
+
+func (f FollowerRequest) getFlag() byte {
+	return f.flag
+}
+
+func (f FollowerRequest) getCommand() string {
+	return f.command
+}
+
+func (a ApplicationRequest) getFlag() byte {
+	return a.flag
+}
+
+func (a ApplicationRequest) getCommand() string {
+	return a.command
+}
+
+func (s *TCPServer) handleFollowerRequest(req FollowerRequest) {
 	switch req.command {
 	case "register":
 
@@ -62,4 +99,19 @@ func (s *TCPServer) handleFollowerRequest(req Request) {
 		broadcastMsg := s.hub.BroadcastMessage("Server", lobbyTitle+" lobby created by "+creatorUsername)
 		s.fbroadcast(broadcastMsg)
 	}
+}
+
+func (s *TCPServer) handleApplicationRequest(req ApplicationRequest) {
+	if req.command == "shutdown" {
+		fmt.Println("Application server is shutting down!")
+		// TODO:
+		// gracefully shutdown
+	}
+
+	// all an application does is send htmx to the users in the lobby
+	// req.arg -> htmx
+	// req.sender -> lobbyTitle
+
+	// maybe implement some security to make sure that the application has access to the lobby
+
 }
