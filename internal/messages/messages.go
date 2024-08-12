@@ -34,6 +34,7 @@ type ApplicationRequest struct {
 	Command    string
 	Arg        string
 	LobbyTitle string
+	Sender     string
 	Receivers  []string
 }
 
@@ -74,13 +75,14 @@ func AReqDecode(req []byte) ApplicationRequest {
 			Flag:    flag,
 			Command: args[0],
 		}
-	} else if len(args) == 4 {
-		usernames := unlistUsernames(args[3])
+	} else if len(args) == 5 {
+		usernames := unlistUsernames(args[4])
 		return ApplicationRequest{
 			Flag:       flag,
 			Command:    args[0],
 			Arg:        args[1],
 			LobbyTitle: args[2],
+			Sender:     args[3],
 			Receivers:  usernames,
 		}
 	} else {
