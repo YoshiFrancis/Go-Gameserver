@@ -19,7 +19,10 @@ func main() {
 
 	typing := os.Args[1]
 	port := os.Args[2]
-	port2 := os.Args[3]
+	var port2 string
+	if len(os.Args) == 4 {
+		port2 = os.Args[3]
+	}
 	_, err := strconv.Atoi(port)
 	if err != nil {
 		fmt.Println("Given an invalid port num")
@@ -29,12 +32,15 @@ func main() {
 		fmt.Println("Given an invalid port num")
 	}
 
-	if typing == "L" {
-		leader.Leader_init(":"+port, port2, nil)
-	} else if typing == "F" {
+	if typing == "L" && len(os.Args) == 4 {
+		fmt.Println("in here")
+		leader.Leader_init(":"+port, ":"+port2, nil)
+	} else if typing == "F" && len(os.Args) == 3 {
 		fmt.Println("What is the address of the leader you would like to follow?")
 		leaderip := input()
 		go follower.Follower_init(":"+port, leaderip, nil)
+	} else {
+		return
 	}
 
 	for {
