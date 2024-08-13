@@ -30,6 +30,10 @@ func (c *Client) handleCommand(message string) (request_msg string) {
 		fmt.Println("User is trying to msg the user: ", split_msg[1])
 	} else if split_msg[0] == "/hub" {
 		request_msg = messages.RoomJoinUser("hub", c.username)
+	} else if split_msg[0] == "/app" {
+
+	} else if split_msg[0] == "start" {
+
 	} else {
 		request_msg = ""
 	}

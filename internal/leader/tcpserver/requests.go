@@ -88,7 +88,7 @@ func (s *TCPServer) handleFollowerRequest(req FollowerRequest) {
 		if !ok {
 			return
 		}
-		appReq := messages.ForApplicationRequest(req.arg, user.GetRoom().GetName(), req.sender)
+		appReq := messages.ApplicationRequestTo(req.arg, user.GetRoom().GetName(), req.sender, user.GetRoom().GetUsers())
 		app.Send <- []byte(appReq)
 	}
 }

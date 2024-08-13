@@ -29,6 +29,11 @@ func CreateLobby(lobbyTitle, username string) string {
 	return message
 }
 
+func FollowerAppRequest(arg, username string) string {
+	message := fmt.Sprintf("+3\r\n5\r\nAPP\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", len(arg), arg, len(username), username)
+	return message
+}
+
 func UserMessageUser(origin_username string, target_username string, private_message string) string {
 	message := fmt.Sprintf("*4\r\n2\r\nPM\r\n%d\r\n%s\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", len(origin_username), origin_username, len(target_username), target_username, len(private_message), private_message)
 	return message
