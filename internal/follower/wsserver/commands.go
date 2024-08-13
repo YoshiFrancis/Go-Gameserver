@@ -19,8 +19,14 @@ func (c *Client) handleCommand(message string) (request_msg string) {
 	case "/echo":
 		c.echo(message)
 	case "/join":
+		if len(split_msg) == 1 {
+			return
+		}
 		request_msg = messages.RoomJoinUser(split_msg[1], c.username)
 	case "/lobby":
+		if len(split_msg) == 1 {
+			return
+		}
 		request_msg = messages.CreateLobby(split_msg[1], c.username)
 	case "/leave":
 		request_msg = messages.DisconnectUser(c.username)
@@ -31,13 +37,18 @@ func (c *Client) handleCommand(message string) (request_msg string) {
 	case "/hub":
 		request_msg = messages.RoomJoinUser("hub", c.username)
 	case "/app":
+		if len(split_msg) == 1 {
+			return
+		}
 		request_msg = messages.FollowerAppRequest(split_msg[1], c.username)
 	case "/app-start":
+		if len(split_msg) == 1 {
+			return
+		}
 		request_msg = messages.FollowerAppStart(split_msg[1], c.username)
 	default:
 		request_msg = ""
 	}
-
 	return
 }
 

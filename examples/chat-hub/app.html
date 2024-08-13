@@ -1,4 +1,4 @@
-<div id="app" hx-swap-oob="outerHTML" ws-connect="/app">
+<div id="app" hx-swap-oob="outerHTML">
   <div id="app-room" hx-swap-oob="outerHTML">
     <h1>Chat-Room Application</h1>
     <div id="participants">
@@ -9,12 +9,14 @@
       </ul>
     </div>
     <div id="app-chat-room">
+      <h2>CHAT ROOM MESSAgES BELOW</h2>
       <ul id="app-messages">
         {{ range .Messages }}
         <li>{{ . }}</li>
         {{ end }}
       </ul>
     </div>
+    <h2>CHAT ROOM FORM</h2>
     <form id="app-chat-room-form" ws-send hx-target="#app-chat-room">
       <input name="message">
       <br>

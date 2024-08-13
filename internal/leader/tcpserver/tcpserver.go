@@ -40,6 +40,7 @@ func NewTCPServer(done chan bool) *TCPServer {
 		aServers:    make(map[string]*ExtenalTCPServer),
 		lRegistry:   make(chan *ExtenalTCPServer),
 		fRegistry:   make(chan *ExtenalTCPServer),
+		aRegistry:   make(chan *ExtenalTCPServer),
 		lRequests:   make(chan []byte),
 		fRequests:   make(chan FollowerRequest),
 		aRequest:    make(chan ApplicationRequest),
@@ -98,6 +99,19 @@ func (s *TCPServer) Run(tcpFPort, tcpAPort string) {
 
 			s.mux.Unlock()
 			// do not need to tell anyone about them
+		case a := <-s.aRegistry:
+			s.mux.Lock()
+
+			fmt.Println("New application server: ", a.serverId)
+
+			if server, ok := s.aServers[a.serverId]; ok {
+				delete(s.aServers, server.serverId)
+			} else {
+				s.aServers[a.serverId] = a
+				go a.run()
+			}
+
+			s.mux.Unlock()
 		case lReq := <-s.lRequests:
 			fmt.Println("Request from another leader: ", string(lReq))
 			// handle leader requests
@@ -160,6 +174,8 @@ func (s *TCPServer) listenForApplications(listener net.Listener) {
 			fmt.Println("Error accepting new connection!")
 			continue
 		}
+
+		log.Println("New application connected")
 
 		// get username
 		nameBuffer := make([]byte, 128)
@@ -226,6 +242,8 @@ func (s *TCPServer) fbroadcast(message string) {
 }
 
 func (s *TCPServer) abroadcast(appName, message string) {
-	app := s.aServers[appName]
-	app.Send <- []byte(message)
+	app, ok := s.aServers[appName]
+	if ok {
+		app.Send <- []byte(message)
+	}
 }

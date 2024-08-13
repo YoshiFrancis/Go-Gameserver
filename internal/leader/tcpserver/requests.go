@@ -20,6 +20,7 @@ type ApplicationRequest struct {
 	command    string
 	arg        string
 	lobbyTitle string
+	sender     string
 	receivers  []string
 }
 
@@ -84,13 +85,10 @@ func (s *TCPServer) handleFollowerRequest(req FollowerRequest) {
 		if !ok {
 			return
 		}
+
 		appName := user.GetRoom().GetApp()
-		app, ok := s.aServers[appName]
-		if !ok {
-			return
-		}
 		appReq := messages.ApplicationRequestTo(req.arg, user.GetRoom().GetName(), req.sender, user.GetRoom().GetUsers())
-		app.Send <- []byte(appReq)
+		s.abroadcast(appName, appReq)
 
 	case "app-start":
 		user, ok := s.userStorage.Get(req.sender)

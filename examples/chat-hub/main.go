@@ -51,7 +51,7 @@ func init() {
 
 func main() {
 	appName := "chatroom"
-	addr := ":8000"
+	addr := ":8002"
 
 	appRooms := make(map[string]ChatRoom) // lobby title to list of usernames
 
@@ -76,6 +76,7 @@ func main() {
 
 		// if command is to start, create chat room
 		if aReq.Command == "start" {
+			fmt.Println("received singal to start chatroom")
 			chatRoom := ChatRoom{
 				usernames:  aReq.Receivers,
 				messages:   []string{},
@@ -84,13 +85,17 @@ func main() {
 			appRooms[aReq.LobbyTitle] = chatRoom
 
 			// send out the application template
-			containers.RenderTemplate(appTemplate, struct {
+			tmpl := containers.RenderTemplate(appTemplate, struct {
 				Participants []string
 				Messages     []string
 			}{
 				Participants: chatRoom.usernames,
 				Messages:     []string{},
 			})
+
+			str_res := messages.ApplicationBroadcast(string(tmpl), chatRoom.lobbyTitle, "Server")
+			res = []byte(str_res)
+
 		} else if aReq.Command == "request" { // else if command is a request, let chat room handle request
 			c, ok := appRooms[aReq.LobbyTitle]
 			if !ok {
@@ -102,10 +107,12 @@ func main() {
 			return
 		} else { // if none of the above command, do nothing and continue on to next read
 			log.Println("Received unknown command: ", aReq.Command) // log it for debugging purposes
+			log.Println("Total received buffer: ", string(buff[:n]))
 			continue
 		}
 
 		// send back handled response
+		log.Println("Sending back response: ", string(res))
 		conn.Write(res)
 	}
 }

@@ -29,15 +29,6 @@ type LeaderRequest struct {
 	Receivers []string
 }
 
-type ApplicationRequest struct {
-	Flag       byte
-	Command    string
-	Arg        string
-	LobbyTitle string
-	Sender     string
-	Receivers  []string
-}
-
 // follower request format
 // command name, argument, username of sender,
 // some follower commands do not have a sender
@@ -68,31 +59,6 @@ func LReqDecode(req []byte) LeaderRequest {
 	}
 }
 
-func AReqDecode(req []byte) ApplicationRequest {
-	flag, args := Decode(req)
-	if len(args) == 1 && args[0] == "shutdown" {
-		return ApplicationRequest{
-			Flag:    flag,
-			Command: args[0],
-		}
-	} else if len(args) == 5 {
-		usernames := unlistUsernames(args[4])
-		return ApplicationRequest{
-			Flag:       flag,
-			Command:    args[0],
-			Arg:        args[1],
-			LobbyTitle: args[2],
-			Sender:     args[3],
-			Receivers:  usernames,
-		}
-	} else {
-		return ApplicationRequest{
-			Flag: 'x',
-		}
-	}
-
-}
-
 func Decode(req []byte) (byte, []string) {
 
 	r := bytes.NewReader(req)
@@ -101,7 +67,7 @@ func Decode(req []byte) (byte, []string) {
 	argc := argcByte - '0'
 	args := make([]string, int(argc))
 
-	if flag != '-' && flag != '+' && flag != '/' && flag != '!' {
+	if flag != '-' && flag != '+' && flag != '/' && flag != '!' && flag != '_' {
 		return 'x', []string{}
 	}
 

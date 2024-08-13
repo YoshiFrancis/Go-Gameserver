@@ -78,7 +78,16 @@ func (s *ExtenalTCPServer) read() {
 				s.main_server.fRequests <- new_req
 			}
 		} else if s.class == "A" {
-			s.main_server.aRequest <- ApplicationRequest{} // TODO
+			aReq := messages.AReqDecode(buffer)
+			if aReq.Flag != 'x' {
+				s.main_server.aRequest <- ApplicationRequest{
+					command:    aReq.Command,
+					arg:        aReq.Arg,
+					lobbyTitle: aReq.LobbyTitle,
+					sender:     aReq.Sender,
+					receivers:  aReq.Receivers,
+				}
+			}
 		}
 	}
 }
