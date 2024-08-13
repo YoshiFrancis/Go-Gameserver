@@ -49,9 +49,15 @@ func ApplicationBroadcast(arg, lobbyTitle, sender string) string { // directed t
 	return message
 }
 
+func ApplicationStart(arg, lobbyTitle, sender string, usernames []string) string {
+	receiversStr := listUsernames(usernames)
+	message := fmt.Sprintf("_5\r\n5\r\nSTART\r\n%d\r\n%s\r\n%d\r\n%s\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", len(arg), arg, len(lobbyTitle), lobbyTitle, len(sender), sender, len(receiversStr), receiversStr)
+	return message
+}
+
 func ApplicationSend(arg, lobbyTitle, sender string, usernames []string) string { // directed to particular uses
 	receiversStr := listUsernames(usernames)
-	message := fmt.Sprintf("_5\r\n9\r\nSEND\r\n%d\r\n%s\r\n%d\r\n%s\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", len(arg), arg, len(lobbyTitle), lobbyTitle, len(sender), sender, len(receiversStr), receiversStr)
+	message := fmt.Sprintf("_5\r\n4\r\nSEND\r\n%d\r\n%s\r\n%d\r\n%s\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", len(arg), arg, len(lobbyTitle), lobbyTitle, len(sender), sender, len(receiversStr), receiversStr)
 	return message
 }
 

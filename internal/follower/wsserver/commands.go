@@ -14,29 +14,30 @@ func (c *Client) handleCommand(message string) (request_msg string) {
 	}
 	split_msg := strings.Split(message, " ")
 	split_msg[0] = strings.ToLower(split_msg[0])
-	if split_msg[0] == "/echo" {
+
+	switch split_msg[0] {
+	case "/echo":
 		c.echo(message)
-	} else if split_msg[0] == "/join" {
-		fmt.Println("Websocket: Attempting to join room: ", split_msg[1])
-		// move user to new room
+	case "/join":
 		request_msg = messages.RoomJoinUser(split_msg[1], c.username)
-	} else if split_msg[0] == "/lobby" {
+	case "/lobby":
 		request_msg = messages.CreateLobby(split_msg[1], c.username)
-	} else if split_msg[0] == "/leave" {
+	case "/leave":
 		request_msg = messages.DisconnectUser(c.username)
-	} else if split_msg[0] == "/help" {
+	case "/help":
 		fmt.Println("User is trying to get help!")
-	} else if split_msg[0] == "/msg" {
+	case "/msg":
 		fmt.Println("User is trying to msg the user: ", split_msg[1])
-	} else if split_msg[0] == "/hub" {
+	case "/hub":
 		request_msg = messages.RoomJoinUser("hub", c.username)
-	} else if split_msg[0] == "/app" {
-
-	} else if split_msg[0] == "start" {
-
-	} else {
+	case "/app":
+		request_msg = messages.FollowerAppRequest(split_msg[1], c.username)
+	case "/app-start":
+		request_msg = messages.FollowerAppStart(split_msg[1], c.username)
+	default:
 		request_msg = ""
 	}
+
 	return
 }
 

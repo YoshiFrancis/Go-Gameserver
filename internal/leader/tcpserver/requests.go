@@ -2,6 +2,7 @@ package tcpserver
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/yoshifrancis/go-gameserver/internal/leader/rooms"
 	"github.com/yoshifrancis/go-gameserver/internal/messages"
@@ -90,6 +91,25 @@ func (s *TCPServer) handleFollowerRequest(req FollowerRequest) {
 		}
 		appReq := messages.ApplicationRequestTo(req.arg, user.GetRoom().GetName(), req.sender, user.GetRoom().GetUsers())
 		app.Send <- []byte(appReq)
+
+	case "app-start":
+		user, ok := s.userStorage.Get(req.sender)
+		if !ok {
+			log.Println("Could not find username: ", req.sender)
+			return
+		}
+
+		app, ok := s.aServers[req.arg]
+		if !ok {
+			log.Println("Could not find app name: ", req.arg)
+			return
+		}
+
+		if user.GetRoom().GetApp() == "" {
+			appStartReq := messages.ApplicationStart("", user.GetRoom().GetName(), req.sender, user.GetRoom().GetUsers())
+			app.Send <- []byte(appStartReq)
+		}
+
 	}
 }
 

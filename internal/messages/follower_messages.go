@@ -28,9 +28,13 @@ func CreateLobby(lobbyTitle, username string) string {
 	message := fmt.Sprintf("+3\r\n5\r\nLOBBY\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", len(lobbyTitle), lobbyTitle, len(username), username)
 	return message
 }
+func FollowerAppStart(appName, username string) string {
+	message := fmt.Sprintf("+3\r\n9\r\nAPP-START\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", len(appName), appName, len(username), username)
+	return message
+}
 
 func FollowerAppRequest(arg, username string) string {
-	message := fmt.Sprintf("+3\r\n5\r\nAPP\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", len(arg), arg, len(username), username)
+	message := fmt.Sprintf("+3\r\n3\r\nAPP\r\n%d\r\n%s\r\n%d\r\n%s\r\n\r\n", len(arg), arg, len(username), username)
 	return message
 }
 
