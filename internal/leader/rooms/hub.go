@@ -116,3 +116,7 @@ func (h *Hub) GetApp() string {
 func (h *Hub) GetUsers() []string {
 	return h.users.Keys()
 }
+
+func (h *Hub) SetApp(appName string) {
+	h.app = appName
+}

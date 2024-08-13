@@ -137,3 +137,7 @@ func (l *Lobby) GetApp() string {
 func (l *Lobby) GetUsers() []string {
 	return l.users.Keys()
 }
+
+func (l *Lobby) SetApp(appName string) {
+	l.app = appName
+}

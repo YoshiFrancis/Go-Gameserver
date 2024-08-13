@@ -8,9 +8,9 @@
         {{ end }}
       </ul>
     </div>
+    <h2>CHAT ROOM MESSAGES BELOW</h2>
     <div id="app-chat-room">
-      <h2>CHAT ROOM MESSAgES BELOW</h2>
-      <ul id="app-messages">
+      <ul id="app-messages" hx-swap="outerHTML">
         {{ range .Messages }}
         <li>{{ . }}</li>
         {{ end }}
@@ -22,6 +22,5 @@
       <br>
       <button type="submit">Send</button>
     </form>
-    <div id="app" hx-swap="outerHTML"></div>
   </div>
 </div>

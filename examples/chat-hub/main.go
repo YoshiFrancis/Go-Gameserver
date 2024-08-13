@@ -53,7 +53,7 @@ func main() {
 	appName := "chatroom"
 	addr := ":8002"
 
-	appRooms := make(map[string]ChatRoom) // lobby title to list of usernames
+	appRooms := make(map[string]*ChatRoom) // lobby title to list of usernames
 
 	conn := connectToLeader(addr, appName)
 
@@ -77,7 +77,7 @@ func main() {
 		// if command is to start, create chat room
 		if aReq.Command == "start" {
 			fmt.Println("received singal to start chatroom")
-			chatRoom := ChatRoom{
+			chatRoom := &ChatRoom{
 				usernames:  aReq.Receivers,
 				messages:   []string{},
 				lobbyTitle: aReq.LobbyTitle,
@@ -102,7 +102,8 @@ func main() {
 				log.Println("Received invalid lobby title!")
 				continue
 			}
-			res = c.addMessage(aReq.Arg, aReq.Sender)
+			res = []byte(messages.ApplicationBroadcast(c.addMessage(aReq.Arg, aReq.Sender), c.lobbyTitle, "Server"))
+
 		} else if aReq.Command == "shutdown" { // else if command is a shutdown, close connection to leader and shutdown application
 			return
 		} else { // if none of the above command, do nothing and continue on to next read
@@ -138,15 +139,15 @@ func connectToLeader(addr, appName string) net.Conn {
 // templating the message with the sender into a <li> format for the html
 // placing all the <li> tags into a <ul> with an id="app-messages" because with htmx websockets,
 // you replace element using out of bounds swapping, which swaps elements via the id
-func (c *ChatRoom) addMessage(msg, sender string) []byte {
+func (c *ChatRoom) addMessage(msg, sender string) string {
 	c.messages = append(c.messages, templateMessage(sender, msg))
-	broadcastMsg := "<ul id=\"app-messages\">"
+	broadcastMsg := "<div id=\"app-chat-room\" hx-swap=\"outerHTML\"><ul id=\"app-messages\" hx-swap=\"outerHTML\">"
 	for _, message := range c.messages {
 		broadcastMsg += message
 	}
-	broadcastMsg += "</ul>"
+	broadcastMsg += "</ul></div>"
 
-	return []byte(broadcastMsg)
+	return broadcastMsg
 }
 
 func templateMessage(sender, msg string) string {

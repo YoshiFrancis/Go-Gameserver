@@ -11,6 +11,7 @@ type Room interface {
 	GetName() string
 	GetApp() string
 	GetUsers() []string
+	SetApp(appName string)
 }
 
 type Message struct {
