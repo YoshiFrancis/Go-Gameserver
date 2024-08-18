@@ -102,8 +102,6 @@ func (s *TCPServer) Run(tcpFPort, tcpAPort string) {
 		case a := <-s.aRegistry:
 			s.mux.Lock()
 
-			fmt.Println("New application server: ", a.serverId)
-
 			if server, ok := s.aServers[a.serverId]; ok {
 				delete(s.aServers, server.serverId)
 			} else {
@@ -116,10 +114,8 @@ func (s *TCPServer) Run(tcpFPort, tcpAPort string) {
 			fmt.Println("Request from another leader: ", string(lReq))
 			// handle leader requests
 		case fReq := <-s.fRequests:
-			fmt.Println("New request from follower: ", fReq)
 			s.handleFollowerRequest(fReq)
 		case aReq := <-s.aRequest:
-			fmt.Println("New request from an application: ", aReq)
 			s.handleApplicationRequest(aReq)
 			// handle request from follower
 		}

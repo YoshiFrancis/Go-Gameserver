@@ -37,7 +37,6 @@ func (h *Hub) Join(user *User) (leavingTmpl, joiningTmpl []byte) {
 	fmt.Println(user.username + " is joining the hub!")
 	h.users.Set(user.username, *user)
 	user.room = h
-	fmt.Println("People in hub: ", h.users.Keys())
 	fmt.Println(h.msgHist.Items())
 	joiningTmpl = containers.RenderTemplate(hubTemplate, struct {
 		Participants []string
@@ -53,7 +52,6 @@ func (h *Hub) Join(user *User) (leavingTmpl, joiningTmpl []byte) {
 func (h *Hub) Leave(user *User) []byte {
 	fmt.Println(user.username + " is leaving the hub!")
 	h.users.Delete(user.username)
-	fmt.Println("People in hub: ", h.users.Keys())
 	user.room = nil
 
 	leavingTmpl := containers.RenderTemplate(hubTemplate, struct {

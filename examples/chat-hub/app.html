@@ -1,7 +1,7 @@
-<div id="app" hx-swap-oob="outerHTML">
+<div id="app" hx-swap-oob="outerHTML"> <!-- the container must include these attributes. Other attributes could also be added-->
   <div id="app-room" hx-swap-oob="outerHTML">
     <h1>Chat-Room Application</h1>
-    <div id="participants">
+    <div id="participants"> <!-- Sent via application -->
       <ul>
         {{ range .Participants }}
           <li>{{ . }}</li>
@@ -10,14 +10,14 @@
     </div>
     <h2>CHAT ROOM MESSAGES BELOW</h2>
     <div id="app-chat-room">
-      <ul id="app-messages" hx-swap="outerHTML">
+      <ul id="app-messages" hx-swap="outerHTML"> <!-- This unordered list will be filled from <li> via the application -->
         {{ range .Messages }}
         <li>{{ . }}</li>
         {{ end }}
       </ul>
     </div>
     <h2>CHAT ROOM FORM</h2>
-    <form id="app-chat-room-form" ws-send hx-target="#app-chat-room">
+    <form id="app-chat-room-form" ws-send hx-target="#app-chat-room"> <!-- Will be sent to the leader, but the leader will send request to application-->
       <input name="message">
       <br>
       <button type="submit">Send</button>

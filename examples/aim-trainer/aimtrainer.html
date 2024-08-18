@@ -1,0 +1,20 @@
+<div id="app" hx-swap-oob="outerHTML">
+  <div id="aim-trainer-container" hx-swap-oob="outerHTML">
+    <h1>Aim Trainer Application</h1>
+    <div id="canvas-container" hx-trigger="click" >
+      <canvas id="canvas"onclick="(function(e) { 
+        let socket = htmx.find('#ws-connection')
+        if (socket && socket.readyState === WebSocket.OPEN) {
+          console.log('Websocket is ready to send')
+        }
+
+        let rect = this.getBoundingClientRect();
+        let x = event.clientX - rect.left;
+        let y = event.clientY - rect.top;
+        console.log('Mouse clicked at:', x, y);
+      })(e)">
+      </canvas>
+    </div>
+    <div id="score"></div>
+  </div>
+</div>

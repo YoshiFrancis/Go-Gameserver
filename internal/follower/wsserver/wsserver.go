@@ -28,11 +28,6 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-const (
-	NONE     = "None"
-	USERNAME = "Username"
-)
-
 type WSServer struct {
 	Clients    *containers.Storage[string, *Client]
 	broadcast  chan LeaderRequest
@@ -88,8 +83,6 @@ func (ws *WSServer) Home(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error unmarshalling JSON:", err)
 		return
 	}
-
-	fmt.Println("New user: ", username.Username)
 
 	NewClient(username.Username, conn, ws)
 	register_msg := messages.RegisterUser(username.Username)

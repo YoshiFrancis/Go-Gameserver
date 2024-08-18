@@ -19,3 +19,17 @@
 
 - Any language capable of utilizing network TCP (most languages fulfill this role)
 - Use of HTMX (will be communicationg application changes via html)
+
+
+### Usage
+
+- .html file must include:
+  - must be contained within div with attributes of id="app" hx-swap-oob="outerHTML" (can have more)
+  - must have an appname
+
+- You can decide whether to connect to a single leader or open requests for leaders to connect to app 
+  - must still implement ability for leaders to connect to app
+
+- When responding to request, most usual response is to send back HTML as a string
+
+- Still experimenting with clicks and other forms of inputs other than form requests, but as seen in the aim-trainer example, you can settup an HTTP server within you main app.html and get responses through there. Through this method, the user would never be sending requests through the leader but directly to the application, but the application can still respond through the leader or directly

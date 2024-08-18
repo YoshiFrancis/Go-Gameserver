@@ -86,8 +86,6 @@ func (s *TCPServer) handleFollowerRequest(req FollowerRequest) {
 			return
 		}
 
-		fmt.Println("Lobby's app name: ", user.GetRoom().GetApp())
-
 		appName := user.GetRoom().GetApp()
 		appReq := messages.ApplicationRequestTo(req.arg, user.GetRoom().GetName(), req.sender, user.GetRoom().GetUsers())
 		fmt.Println("broadcasting to ", appName)
@@ -108,7 +106,6 @@ func (s *TCPServer) handleFollowerRequest(req FollowerRequest) {
 
 		if user.GetRoom().GetApp() == "" {
 			user.GetRoom().SetApp(req.arg)
-			fmt.Println("Lobby's app name: ", user.GetRoom().GetApp())
 			appStartReq := messages.ApplicationStart("", user.GetRoom().GetName(), req.sender, user.GetRoom().GetUsers())
 			app.Send <- []byte(appStartReq)
 		}

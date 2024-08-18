@@ -42,8 +42,6 @@ func (l *Lobby) Join(user *User) (leavingTmpl, joiningTmpl []byte) {
 
 	leavingTmpl = user.room.Leave(user)
 
-	fmt.Println(user.username + " is joining " + l.title)
-
 	l.users.Set(user.username, *user)
 	user.room = l
 	fmt.Println(user.username + " has joined " + user.room.GetName())
